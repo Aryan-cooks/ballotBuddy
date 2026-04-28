@@ -1,0 +1,319 @@
+.simulation-container {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.back-button {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  font-weight: 600;
+  cursor: pointer;
+  padding: var(--space-2) 0;
+}
+
+.instruction-card {
+  background-color: var(--surface-color);
+  padding: var(--space-6);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-md);
+}
+
+.steps-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.step-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.step-number {
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-full);
+  background-color: var(--primary-blue-light);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+/* EVM Styles */
+.evm-booth {
+  flex: 1;
+  background-color: var(--bg-color);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-4);
+}
+
+.evm-machine {
+  background-color: var(--surface-color);
+  border-radius: var(--radius-xl);
+  width: 100%;
+  max-width: 420px;
+  box-shadow: 0 20px 40px rgba(0,0,0,0.08), 0 1px 3px rgba(0,0,0,0.05);
+  border: 1px solid var(--border-color);
+  overflow: hidden;
+}
+
+.evm-header {
+  background-color: var(--bg-color);
+  padding: var(--space-4);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.evm-header h3 {
+  margin: 0;
+  color: var(--text-primary);
+  font-size: 1.1rem;
+  letter-spacing: 0.5px;
+  font-weight: 700;
+}
+
+.ready-light {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--success);
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.ready-light::before {
+  content: '';
+  display: block;
+  width: 8px;
+  height: 8px;
+  border-radius: var(--radius-full);
+  background-color: currentColor;
+  box-shadow: 0 0 8px currentColor;
+}
+
+.ready-light.offline {
+  color: #ef4444;
+}
+
+.evm-candidates {
+  display: flex;
+  flex-direction: column;
+}
+
+.evm-row {
+  display: flex;
+  background-color: transparent;
+  border-bottom: 1px solid var(--border-color);
+  transition: background-color var(--transition-fast);
+}
+
+.evm-row:last-child {
+  border-bottom: none;
+}
+
+.evm-row:hover {
+  background-color: var(--bg-color);
+}
+
+.evm-details {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  padding: var(--space-4);
+}
+
+.candidate-serial {
+  width: 32px;
+  font-weight: 600;
+  color: var(--text-muted);
+  font-size: 0.95rem;
+}
+
+.candidate-name {
+  flex: 1;
+  font-weight: 600;
+  font-size: 1rem;
+  color: var(--text-primary);
+}
+
+.candidate-symbol {
+  font-size: 1.75rem;
+  width: 48px;
+  text-align: center;
+  line-height: 1;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));
+}
+
+.evm-action {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  padding: 0 var(--space-4);
+}
+
+.evm-light {
+  width: 12px;
+  height: 12px;
+  border-radius: var(--radius-full);
+  background-color: #e5e7eb;
+  box-shadow: inset 0 1px 2px rgba(0,0,0,0.1);
+  transition: all 0.2s ease-in-out;
+}
+
+.evm-light.active {
+  background-color: #ef4444;
+  box-shadow: 0 0 12px rgba(239, 68, 68, 0.8), inset 0 0 4px rgba(255,255,255,0.5);
+}
+
+.evm-button {
+  width: 44px;
+  height: 32px;
+  background-color: #2563eb;
+  border: 1px solid #1d4ed8;
+  border-radius: var(--radius-full);
+  box-shadow: 0 2px 4px rgba(37, 99, 235, 0.2), inset 0 1px 1px rgba(255,255,255,0.2);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.evm-button:hover:not(:disabled) {
+  background-color: #1d4ed8;
+  box-shadow: 0 4px 6px rgba(37, 99, 235, 0.3), inset 0 1px 1px rgba(255,255,255,0.2);
+}
+
+.evm-button:active:not(:disabled) {
+  transform: translateY(2px);
+  box-shadow: 0 0 2px rgba(37, 99, 235, 0.3), inset 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.evm-button:disabled {
+  background-color: #94a3b8;
+  border-color: #64748b;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+/* VVPAT Styles */
+.vvpat-booth {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background-color: #1a1a1a;
+  color: white;
+  padding: 24px;
+}
+
+.vvpat-machine-casing {
+  background: #333;
+  padding: 20px;
+  border-radius: 12px;
+  border: 2px solid #222;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.5), inset 0 2px 5px rgba(255,255,255,0.1);
+}
+
+.vvpat-glass-window {
+  width: 220px;
+  height: 280px;
+  background-color: #000;
+  border: 12px solid #111;
+  border-radius: 8px;
+  overflow: hidden;
+  position: relative;
+  box-shadow: inset 0 0 40px rgba(0,0,0,0.9);
+}
+
+/* Glass reflection effect */
+.vvpat-glass-window::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 50%, rgba(255,255,255,0.05) 100%);
+  pointer-events: none;
+  z-index: 10;
+}
+
+.vvpat-slip {
+  background-color: #f8fafc;
+  color: #1e293b;
+  width: 80%;
+  margin: 0 auto;
+  text-align: center;
+  border: 1px solid #cbd5e1;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+  position: absolute;
+  top: -200px; /* Start hidden above */
+  left: 10%;
+  z-index: 5;
+}
+
+.slip-content {
+  padding: 16px 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background-image: repeating-linear-gradient(transparent, transparent 2px, rgba(0,0,0,0.02) 2px, rgba(0,0,0,0.02) 4px);
+}
+
+@keyframes printSlip7Seconds {
+  0% { top: -200px; opacity: 1; }
+  10% { top: 20px; opacity: 1; }  /* Prints out in 0.7s */
+  85% { top: 20px; opacity: 1; }  /* Stays visible until ~6s */
+  90% { top: 20px; opacity: 0; transform: translateY(0); } /* Cut and drop */
+  100% { top: 300px; opacity: 0; transform: translateY(50px); }
+}
+
+.printing-animation {
+  animation: printSlip7Seconds 7s ease-in-out forwards;
+}
+
+.slip-serial {
+  font-size: 0.8rem;
+  margin-bottom: 8px;
+  color: #555;
+}
+
+.slip-name {
+  font-size: 1.2rem;
+  margin-bottom: 12px;
+}
+
+.slip-symbol {
+  font-size: 3rem;
+}
+
+/* Success Screen */
+.success-screen {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+}
+
+.success-icon {
+  animation: bounceIn 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+@keyframes bounceIn {
+  0% { transform: scale(0); opacity: 0; }
+  50% { transform: scale(1.2); }
+  100% { transform: scale(1); opacity: 1; }
+}

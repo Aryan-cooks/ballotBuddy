@@ -1,0 +1,101 @@
+.ui-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-display);
+  font-weight: 600;
+  border: none;
+  border-radius: var(--radius-xl);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  outline: none;
+  text-decoration: none;
+}
+
+.ui-button:active {
+  transform: scale(0.96);
+}
+
+.ui-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Sizes */
+.ui-button--sm {
+  padding: var(--space-2) var(--space-3);
+  font-size: 0.875rem;
+}
+
+.ui-button--md {
+  padding: var(--space-3) var(--space-6);
+  font-size: 1rem;
+}
+
+.ui-button--lg {
+  padding: var(--space-4) var(--space-8);
+  font-size: 1.125rem;
+}
+
+.ui-button--full {
+  width: 100%;
+}
+
+/* Variants */
+.ui-button--primary {
+  background-color: var(--primary-blue);
+  color: white;
+  box-shadow: 0 4px 14px 0 rgba(43, 82, 146, 0.39);
+}
+
+.ui-button--primary:hover:not(:disabled) {
+  background-color: var(--primary-blue-light);
+  box-shadow: 0 6px 20px rgba(43, 82, 146, 0.23);
+}
+
+.ui-button--secondary {
+  background-color: var(--secondary-orange);
+  color: white;
+  box-shadow: 0 4px 14px 0 rgba(255, 140, 0, 0.39);
+}
+
+.ui-button--secondary:hover:not(:disabled) {
+  background-color: var(--secondary-orange-light);
+  box-shadow: 0 6px 20px rgba(255, 140, 0, 0.23);
+}
+
+.ui-button--outline {
+  background-color: transparent;
+  color: var(--primary-blue);
+  border: 2px solid var(--primary-blue);
+}
+
+.ui-button--outline:hover:not(:disabled) {
+  background-color: rgba(43, 82, 146, 0.05);
+}
+
+.ui-button--ghost {
+  background-color: transparent;
+  color: var(--text-secondary);
+}
+
+.ui-button--ghost:hover:not(:disabled) {
+  background-color: rgba(0, 0, 0, 0.05);
+  color: var(--text-primary);
+}
+
+/* Icon Support */
+.ui-button__icon {
+  display: inline-flex;
+  margin-right: var(--space-2);
+}
+
+/* Success Variant for specific actions */
+.ui-button--success {
+  background-color: var(--success);
+  color: white;
+}
+.ui-button--success:hover:not(:disabled) {
+  background-color: #0d9668;
+}

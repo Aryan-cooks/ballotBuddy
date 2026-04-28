@@ -1,0 +1,120 @@
+.overall-progress {
+  background-color: var(--surface-color);
+  padding: var(--space-4);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--border-color);
+}
+
+.progress-label {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: var(--space-2);
+}
+
+.text-primary {
+  color: var(--primary-blue);
+}
+
+.font-semibold {
+  font-weight: 600;
+}
+
+.module-timeline {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  padding-left: var(--space-2);
+}
+
+.timeline-item {
+  display: flex;
+  gap: var(--space-4);
+  position: relative;
+  min-height: 120px;
+}
+
+.timeline-connector {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 24px;
+}
+
+.timeline-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-full);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--surface-color);
+  z-index: 2;
+  flex-shrink: 0;
+}
+
+.timeline-item.in-progress .timeline-icon {
+  border: 2px solid var(--primary-blue);
+}
+
+.timeline-item.locked .timeline-icon {
+  background-color: var(--bg-color);
+  border: 2px dashed var(--border-color);
+}
+
+.active-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: var(--radius-full);
+  background-color: var(--primary-blue);
+  box-shadow: 0 0 0 4px rgba(43, 82, 146, 0.2);
+  animation: pulse 2s infinite;
+}
+
+.timeline-line {
+  width: 2px;
+  flex-grow: 1;
+  background-color: var(--border-color);
+  margin: var(--space-2) 0;
+}
+
+.timeline-item.completed .timeline-line {
+  background-color: var(--success);
+}
+
+.timeline-card {
+  flex: 1;
+  margin-bottom: var(--space-6);
+}
+
+.card-header-status {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.text-xs { font-size: 0.75rem; }
+.uppercase { text-transform: uppercase; }
+.font-bold { font-weight: 700; }
+
+.status-badge {
+  font-size: 0.65rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+  text-transform: uppercase;
+}
+
+.status-badge.success {
+  background-color: var(--success-light);
+  color: #065F46;
+}
+
+.status-badge.active {
+  background-color: #DBEAFE;
+  color: #1E40AF;
+}
+
+.opacity-75 {
+  opacity: 0.75;
+}

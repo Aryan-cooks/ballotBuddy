@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>BallotBuddy</title>
+    <style>
+      /* Hide the Google Translate banner/toolbar */
+      .goog-te-banner-frame, .goog-te-balloon-frame { display: none !important; }
+      body { top: 0 !important; }
+      .skiptranslate { display: none !important; }
+      #google_translate_element { display: none !important; }
+
+      /* Kill ALL Google Translate hover underlines and tooltips */
+      .goog-text-highlight {
+        background: none !important;
+        box-shadow: none !important;
+        border: none !important;
+      }
+      .goog-te-tooltip,
+      .goog-te-tooltip-text,
+      .goog-te-balloon-frame,
+      .goog-tooltip,
+      .goog-tooltip-content,
+      .goog-te-menu-value span,
+      .VIpgJd-ZVi9od-l4eHX-hSRGPd,
+      .VIpgJd-ZVi9od-aZ2wEe-wOHMyf {
+        display: none !important;
+      }
+      /* Prevent translated text from showing underline on hover */
+      font[_msttexthash],
+      [_msttexthash] {
+        text-decoration: none !important;
+        border-bottom: none !important;
+        cursor: auto !important;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+    <!-- Hidden Google Translate mount point -->
+    <div id="google_translate_element"></div>
+    <script type="text/javascript">
+      function googleTranslateElementInit() {
+        new google.translate.TranslateElement(
+          { pageLanguage: 'en', autoDisplay: false },
+          'google_translate_element'
+        );
+      }
+    </script>
+    <script type="text/javascript"
+      src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit">
+    </script>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>
