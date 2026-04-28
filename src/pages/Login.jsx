@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { Loader2, AlertCircle, ArrowLeft } from 'lucide-react';
+import { Loader2, AlertCircle, ArrowLeft, Sun, Moon } from 'lucide-react';
 import './Login.css';
 
 const formatPhone = (value) => {
@@ -24,6 +24,21 @@ const Login = () => {
   const [otp, setOtp] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+
+  // Layout states
+  const [darkMode, setDarkMode] = useState(() => localStorage.getItem('darkMode') === 'true');
+
+  useEffect(() => {
+    if (darkMode) {
+      document.body.classList.add('dark-mode');
+      localStorage.setItem('darkMode', 'true');
+    } else {
+      document.body.classList.remove('dark-mode');
+      localStorage.setItem('darkMode', 'false');
+    }
+  }, [darkMode]);
+
+  const toggleDarkMode = () => setDarkMode(!darkMode);
 
   const phoneValid = validatePhone(phone);
   const otpValid = validateOTP(otp);
@@ -67,13 +82,37 @@ const Login = () => {
 
   return (
     <div className="auth-page">
-      <div className="auth-top-bar">
-        <Link to="/" className="auth-logo">
-          <img src="/logo.png" alt="BallotBuddy" />
-          <span className="notranslate">BallotBuddy</span>
+      <div className="auth-top-bar" style={{ padding: '12px 16px' }}>
+        <Link to="/" className="auth-logo" style={{ gap: '12px', display: 'flex', alignItems: 'center' }}>
+          <div style={{ background: 'var(--surface-color)', width: '40px', height: '40px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: 'var(--shadow-md)', overflow: 'hidden', border: '1px solid var(--border-color)' }}>
+            <img 
+              src="/logo.png" 
+              alt="BallotBuddy Logo" 
+              className="logo-light"
+              style={{ width: '85%', height: '85%', objectFit: 'contain' }} 
+            />
+            <img 
+              src="/logo_dark_mode.png" 
+              alt="BallotBuddy Logo Dark" 
+              className="logo-dark"
+              style={{ width: '85%', height: '85%', objectFit: 'contain', display: 'none' }} 
+            />
+          </div>
+          <span className="notranslate" style={{ fontSize: '1.5rem', margin: 0, fontWeight: 800, color: 'var(--primary-blue-dark)', letterSpacing: '-0.5px' }}>
+            BallotBuddy
+          </span>
         </Link>
-        <div className="auth-actions">
-          <Link to="/signup">Create an Account</Link>
+        <div className="auth-actions" style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+          <Link to="/signup" style={{ marginRight: '8px', fontWeight: 600 }}>Create an Account</Link>
+
+          <button 
+            type="button"
+            onClick={toggleDarkMode}
+            style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '36px', height: '36px', borderRadius: '50%', background: darkMode ? 'var(--primary-blue)' : 'var(--surface-color)', color: darkMode ? 'white' : 'var(--text-primary)', border: '1px solid var(--border-color)', cursor: 'pointer', boxShadow: 'var(--shadow-sm)' }}
+            aria-label="Toggle Dark Mode"
+          >
+            {darkMode ? <Sun size={16} /> : <Moon size={16} />}
+          </button>
         </div>
       </div>
 

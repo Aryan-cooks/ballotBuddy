@@ -1,6 +1,7 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { ProgressProvider } from './context/ProgressContext';
+import { TranslationProvider } from './context/TranslationContext';
 import AppLayout from './layouts/AppLayout';
 import HomeDashboard from './pages/HomeDashboard';
 import LearningModules from './pages/LearningModules';
@@ -14,8 +15,9 @@ import './App.css';
 
 function App() {
   return (
-    <ProgressProvider>
-      <Router>
+    <TranslationProvider>
+      <ProgressProvider>
+        <Router>
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Register />} />
@@ -29,6 +31,7 @@ function App() {
         </Routes>
       </Router>
     </ProgressProvider>
+    </TranslationProvider>
   );
 }
 

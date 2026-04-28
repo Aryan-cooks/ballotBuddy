@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Newspaper, ExternalLink, Clock, Calendar, CheckCircle } from 'lucide-react';
 import Card from '../components/Card';
 import './NewsFeed.css';
@@ -48,7 +48,16 @@ const mockNews = [
 
 const NewsFeed = () => {
   const [activeFilter, setActiveFilter] = useState('All');
+  const [isLoading, setIsLoading] = useState(true);
   const filters = ['All', 'Official', 'Fact Check', 'General'];
+
+  useEffect(() => {
+    setIsLoading(true);
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 1200);
+    return () => clearTimeout(timer);
+  }, [activeFilter]);
 
   const filteredNews = activeFilter === 'All' 
     ? mockNews 
@@ -56,13 +65,10 @@ const NewsFeed = () => {
 
   return (
     <div className="news-feed-container animate-fade-in">
-      <div className="container mt-4 pb-20">
-        <div className="page-header mb-6">
-          <div className="icon-wrapper bg-blue-light mb-3">
-            <Newspaper size={28} color="var(--primary-blue)" />
-          </div>
-          <h1>Election News</h1>
-          <p className="text-muted mt-2">Stay updated with official announcements, fact-checks, and general election news.</p>
+      <div className="container mt-0 pb-20">
+        <div className="page-header mb-4 mt-2">
+          <h1 style={{ fontSize: '1.75rem', marginBottom: '4px' }}>Election News</h1>
+          <p className="text-muted mt-0">Stay updated with official announcements, fact-checks, and general election news.</p>
         </div>
 
         <div className="news-filters mb-6">
@@ -78,12 +84,33 @@ const NewsFeed = () => {
         </div>
 
         <div className="news-list">
-          {filteredNews.map((news, index) => (
-            <Card key={news.id} className="news-card animate-slide-up" style={{ animationDelay: `${index * 0.1}s` }}>
+          {isLoading ? (
+            Array.from({ length: 3 }).map((_, i) => (
+              <div key={i} className="news-card skeleton-card">
+                <div className="skeleton-header">
+                  <div className="skeleton-tag shimmer"></div>
+                  <div className="skeleton-time shimmer"></div>
+                </div>
+                <div className="skeleton-title shimmer"></div>
+                <div className="skeleton-title short shimmer"></div>
+                <div className="skeleton-summary shimmer"></div>
+                <div className="skeleton-summary shimmer"></div>
+                <div className="skeleton-footer">
+                  <div className="skeleton-source shimmer"></div>
+                  <div className="skeleton-read-time shimmer"></div>
+                </div>
+              </div>
+            ))
+          ) : (
+            filteredNews.map((news, index) => (
+              <Card key={news.id} className={`news-card animate-slide-up category-${news.category.replace(/\s+/g, '-').toLowerCase()}`} style={{ animationDelay: `${index * 0.1}s` }}>
               <div className="news-header">
-                <span className={`news-category ${news.category.replace(/\s+/g, '-').toLowerCase()}`}>
-                  {news.category}
-                </span>
+                <div className={`news-tag tag-${news.category.replace(/\s+/g, '-').toLowerCase()}`}>
+                  {news.category === 'Official' ? '🔵 Official Update' : 
+                   news.category === 'Fact Check' ? '🔴 Fact Check' : 
+                   news.category === 'Education' ? '🟠 Education' :
+                   '⚪ General'}
+                </div>
                 <span className="news-time">
                   <Clock size={12} /> {news.date}
                 </span>
@@ -103,9 +130,10 @@ const NewsFeed = () => {
                 </div>
               </div>
             </Card>
-          ))}
+          ))
+          )}
           
-          {filteredNews.length === 0 && (
+          {!isLoading && filteredNews.length === 0 && (
             <div className="text-center p-8 text-muted">
               <p>No news found for this category.</p>
             </div>

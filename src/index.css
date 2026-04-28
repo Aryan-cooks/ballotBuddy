@@ -89,6 +89,24 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* Hindi Language Tweaks */
+body.lang-hi {
+  line-height: 1.6;
+  letter-spacing: 0.2px;
+}
+
+body.lang-hi .tagline {
+  max-width: 300px;
+  line-height: 1.6;
+  font-weight: 600;
+}
+
+body.lang-hi h1, 
+body.lang-hi h2, 
+body.lang-hi h3 {
+  line-height: 1.4;
+}
+
 h1, h2, h3, h4, h5, h6 {
   font-family: var(--font-display);
   font-weight: 700;
@@ -177,12 +195,12 @@ body.dark-mode {
   --accent-yellow: #facc15;
   --accent-teal: #22d3ee;
 
-  --bg-color: #0f172a;
-  --surface-color: #1e293b;
-  --border-color: #334155;
+  --bg-color: #0b1120;
+  --surface-color: #151e2e;
+  --border-color: #2a374a;
   
-  --text-primary: #f8fafc;
-  --text-secondary: #cbd5e1;
+  --text-primary: #ffffff;
+  --text-secondary: #e2e8f0;
   --text-muted: #94a3b8;
 
   --success: #10b981;

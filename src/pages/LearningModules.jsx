@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Play, CheckCircle2, Lock, Unlock, ArrowRight, UserCheck, FileSignature, Box, MapPin, ShieldCheck, FileText, X, Cpu, RotateCcw, Circle, BatteryCharging, BluetoothOff, WifiOff, AlertTriangle, TrendingUp, Check, Settings, Fingerprint } from 'lucide-react';
+import { Play, CheckCircle2, Lock, Unlock, ArrowRight, UserCheck, FileSignature, Box, MapPin, ShieldCheck, FileText, X, Cpu, RotateCcw, Circle, BatteryCharging, BluetoothOff, WifiOff, AlertTriangle, Trophy, Check, Settings, Fingerprint } from 'lucide-react';
 import Card from '../components/Card';
 import ProgressBar from '../components/ProgressBar';
 import Button from '../components/Button';
@@ -423,9 +423,9 @@ const LearningModules = () => {
                       {agentVerified && <span className="badge" style={{ background: 'var(--success)', color: 'white' }}>VERIFIED</span>}
                     </div>
                     <p className="text-xs text-muted mb-4">You are a Counting Agent. Inspect the Control Unit seal before it is opened.</p>
-                    <div style={{ background: 'var(--bg-color)', padding: '16px', borderRadius: '8px', textAlign: 'center', border: '1px solid var(--border-color)', marginBottom: '12px' }}>
-                      <Lock size={32} color={agentVerified ? "var(--success)" : "var(--text-muted)"} className="mb-2" />
-                      <p className="text-sm font-mono mb-2" style={{ background: 'var(--surface-color)', display: 'inline-block', padding: '4px 8px', borderRadius: '4px', border: '1px solid var(--border-color)' }}>SEAL ID: IND-77X92</p>
+                    <div style={{ background: 'var(--bg-color)', padding: '16px', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px', border: '1px solid var(--border-color)', marginBottom: '12px' }}>
+                      <Lock size={32} color={agentVerified ? "var(--success)" : "var(--text-muted)"} />
+                      <p className="text-sm font-mono" style={{ background: 'var(--surface-color)', margin: 0, padding: '4px 8px', borderRadius: '4px', border: '1px solid var(--border-color)' }}>SEAL ID: IND-77X92</p>
                     </div>
                     <Button 
                       fullWidth 
@@ -529,26 +529,51 @@ const LearningModules = () => {
 
       {/* Completion Overlay */}
       {overallProgress === 100 && !selectedModule && (
-        <div className="modal-overlay animate-slide-up" style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'var(--primary-gradient)', zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 'var(--space-4)' }}>
-          <Card style={{ textAlign: 'center', padding: '32px 24px', maxWidth: '400px' }}>
+        <div className="modal-overlay" style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(15, 23, 42, 0.85)', backdropFilter: 'blur(8px)', zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 'var(--space-4)', animation: 'slideUpFade 0.3s ease-out' }}>
+          <Card style={{ textAlign: 'center', padding: '40px 24px', maxWidth: '400px', width: '100%', boxShadow: 'var(--shadow-glow)', transform: 'scale(1)', animation: 'slideUpFade 0.5s cubic-bezier(0.34, 1.56, 0.64, 1)' }}>
             <div className="mb-4" style={{ display: 'flex', justifyContent: 'center' }}>
-              <div style={{ background: '#d1fae5', padding: '20px', borderRadius: '50%' }}>
-                <TrendingUp size={64} color="var(--success)" />
+              <div style={{ background: 'var(--success-light)', padding: '24px', borderRadius: '50%', boxShadow: '0 0 30px rgba(16, 185, 129, 0.2)' }}>
+                <Trophy size={72} color="var(--success)" />
               </div>
             </div>
-            <h2 className="mb-2" style={{ color: 'var(--success)' }}>100% Election Ready!</h2>
-            <p className="text-muted mb-6">You have mastered the democratic process. Your Democracy Score is fully maxed out!</p>
-            <Button 
-              fullWidth 
-              onClick={() => {
-                resetProgress();
-                setModuleTwoStep(0);
-                setModuleThreeStep(0);
-                navigate('/');
-              }}
-            >
-              Restart Course
-            </Button>
+            <h1 className="mb-2" style={{ color: 'var(--text-primary)', fontSize: '2rem' }}>100% Ready!</h1>
+            <p className="text-muted mb-6" style={{ fontSize: '1.05rem' }}>Democracy score maxed out. You are officially election-ready.</p>
+            
+            <div style={{ background: 'var(--bg-color)', padding: '16px 20px', borderRadius: '12px', textAlign: 'left', marginBottom: '28px', border: '1px solid var(--border-color)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '10px' }}>
+                <CheckCircle2 size={20} color="var(--success)" />
+                <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>Voting Basics</span>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '10px' }}>
+                <CheckCircle2 size={20} color="var(--success)" />
+                <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>Election Process</span>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <CheckCircle2 size={20} color="var(--success)" />
+                <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>Fact Checking</span>
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <Button 
+                fullWidth 
+                icon={<ArrowRight size={18} />}
+                onClick={() => navigate('/news')}
+              >
+                Stay Updated
+              </Button>
+              <Button 
+                fullWidth 
+                variant="outline"
+                onClick={() => {
+                  resetProgress();
+                  setModuleTwoStep(0);
+                  setModuleThreeStep(0);
+                }}
+              >
+                Retake Course
+              </Button>
+            </div>
           </Card>
         </div>
       )}

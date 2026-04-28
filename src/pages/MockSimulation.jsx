@@ -56,11 +56,11 @@ const MockSimulation = ({ embedded = false, onComplete = null }) => {
 
   useEffect(() => {
     if (step === 'vvpat') {
-      // 7-second VVPAT animation per ECI guidelines
+      // 5-second VVPAT animation per user request (originally 7s per ECI guidelines)
       const timer = setTimeout(() => {
         setStep('success');
         updateModuleProgress(2, 100, 'completed'); // Mark module 2 completely done
-      }, 7000);
+      }, 5000);
       return () => clearTimeout(timer);
     }
   }, [step, updateModuleProgress]);
@@ -90,7 +90,7 @@ const MockSimulation = ({ embedded = false, onComplete = null }) => {
               </div>
               <div className="step-item">
                 <div className="step-number">3</div>
-                <p>Check the VVPAT window. The printed slip will be visible behind the glass for exactly 7 seconds before cutting and dropping.</p>
+                <p>Check the VVPAT window. The printed slip will be visible behind the glass for exactly 5 seconds before cutting and dropping.</p>
               </div>
             </div>
             <Button fullWidth onClick={() => setStep('voting')}>Enter Booth</Button>
@@ -167,7 +167,7 @@ const MockSimulation = ({ embedded = false, onComplete = null }) => {
         <div className="vvpat-booth">
           <div style={{ textAlign: 'center', marginBottom: '20px' }}>
             <h3 style={{ color: 'white', margin: 0 }}>VVPAT Machine</h3>
-            <p className="text-white-muted text-sm mt-1" style={{ opacity: 0.8 }}>Verifying your vote... (7 seconds)</p>
+            <p className="text-white-muted text-sm mt-1" style={{ opacity: 0.8 }}>Verifying your vote... (5 seconds)</p>
           </div>
           <div className="vvpat-machine-casing">
             <div className="vvpat-glass-window">

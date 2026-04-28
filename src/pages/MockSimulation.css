@@ -272,16 +272,16 @@
   background-image: repeating-linear-gradient(transparent, transparent 2px, rgba(0,0,0,0.02) 2px, rgba(0,0,0,0.02) 4px);
 }
 
-@keyframes printSlip7Seconds {
+@keyframes printSlip5Seconds {
   0% { top: -200px; opacity: 1; }
-  10% { top: 20px; opacity: 1; }  /* Prints out in 0.7s */
-  85% { top: 20px; opacity: 1; }  /* Stays visible until ~6s */
-  90% { top: 20px; opacity: 0; transform: translateY(0); } /* Cut and drop */
+  14% { top: 20px; opacity: 1; }  /* Prints out in 0.7s */
+  80% { top: 20px; opacity: 1; }  /* Stays visible until 4s */
+  85% { top: 20px; opacity: 0; transform: translateY(0); } /* Cut and drop */
   100% { top: 300px; opacity: 0; transform: translateY(50px); }
 }
 
 .printing-animation {
-  animation: printSlip7Seconds 7s ease-in-out forwards;
+  animation: printSlip5Seconds 5s ease-in-out forwards;
 }
 
 .slip-serial {

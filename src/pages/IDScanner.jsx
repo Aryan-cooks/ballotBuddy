@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { createWorker } from 'tesseract.js';
 import { Camera, CheckCircle, Upload, X, ScanFace } from 'lucide-react';
 import Card from '../components/Card';
@@ -11,6 +11,21 @@ const IDScanner = ({ onScanSuccess, onCancel }) => {
   const [imagePreview, setImagePreview] = useState(null);
   const [progress, setProgress] = useState(0);
   const fileInputRef = useRef(null);
+
+  useEffect(() => {
+    document.body.style.overflow = 'hidden';
+    const mainContent = document.querySelector('.main-content');
+    if (mainContent) {
+      mainContent.style.overflow = 'hidden';
+    }
+    
+    return () => {
+      document.body.style.overflow = '';
+      if (mainContent) {
+        mainContent.style.overflow = '';
+      }
+    };
+  }, []);
 
   const handleImageUpload = async (event) => {
     const file = event.target.files[0];
