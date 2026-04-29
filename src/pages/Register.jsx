@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { Loader2, AlertCircle, Sun, Moon } from 'lucide-react';
+import { Loader2, AlertCircle, CheckCircle, Sun, Moon, Eye, EyeOff } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
 import './Register.css';
 
 const validateEmail = (email) => {
@@ -9,14 +10,29 @@ const validateEmail = (email) => {
 
 const Register = () => {
   const navigate = useNavigate();
+  const { signUpWithEmail, signInWithGoogle, signInWithPhone, verifyPhoneOtp, user } = useAuth();
   const [username, setUsername] = useState('');
-  const [email, setEmail] = useState('');
+  const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
+  const [otp, setOtp] = useState('');
+  const [otpSent, setOtpSent] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [success, setSuccess] = useState(null);
+  const [showPassword, setShowPassword] = useState(false);
+
+  const isPhone = !identifier.includes('@') && identifier.trim().length >= 7 && /^[0-9+ \-]+$/.test(identifier);
+  const isEmail = validateEmail(identifier);
 
   // Layout states
   const [darkMode, setDarkMode] = useState(() => localStorage.getItem('darkMode') === 'true');
+
+  // If already logged in, redirect to home
+  useEffect(() => {
+    if (user) {
+      navigate('/', { replace: true });
+    }
+  }, [user, navigate]);
 
   useEffect(() => {
     if (darkMode) {
@@ -30,38 +46,66 @@ const Register = () => {
 
   const toggleDarkMode = () => setDarkMode(!darkMode);
 
-  const emailValid = validateEmail(email);
   const usernameValid = username.trim().length > 2;
-  const passwordValid = password.length >= 6;
-  const formValid = emailValid && usernameValid && passwordValid;
+  const formValid = otpSent ? otp.length === 6 : (isEmail ? (password.length >= 6 && usernameValid) : false);
 
-  const handleRegister = async (e) => {
-    e.preventDefault();
-    if (!formValid) {
-      setError('Please fill all fields correctly (password min 6 characters)');
+  const handleGetOtp = async () => {
+    if (!isPhone) {
+      setError('Please enter a valid phone number (e.g., +919876543210)');
       return;
     }
     setError(null);
     setLoading(true);
-    
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1200));
-    
-    setLoading(false);
-    
-    // Simulate auth logic
-    localStorage.setItem('isLoggedIn', 'true');
-    localStorage.setItem('userEmail', email);
-    localStorage.setItem('userName', username);
-    navigate('/');
+    try {
+      await signInWithPhone(identifier);
+      setOtpSent(true);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleGoogleSignup = () => {
-    // Simulate Google Signup
-    localStorage.setItem('isLoggedIn', 'true');
-    localStorage.setItem('userEmail', 'user@gmail.com');
-    localStorage.setItem('userName', 'Google User');
-    navigate('/');
+  const handleRegister = async (e) => {
+    e.preventDefault();
+    if (!formValid) {
+      if (otpSent) setError('Please enter the 6-digit OTP');
+      else if (!usernameValid) setError('Username must be at least 3 characters');
+      else if (isEmail) setError('Password must be at least 6 characters');
+      else setError('Please enter a valid email or phone number');
+      return;
+    }
+    setError(null);
+    setSuccess(null);
+    setLoading(true);
+    
+    try {
+      if (otpSent) {
+        await verifyPhoneOtp(identifier, otp);
+        // Metadata (username) update could go here if needed
+        navigate('/');
+      } else {
+        const data = await signUpWithEmail(identifier, password, username);
+        if (data.user && !data.session) {
+          setSuccess('Account created! Check your email to confirm, then log in.');
+        } else {
+          navigate('/');
+        }
+      }
+    } catch (err) {
+      setError(err.message || 'Registration failed. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGoogleSignup = async () => {
+    setError(null);
+    try {
+      await signInWithGoogle();
+    } catch (err) {
+      setError(err.message || 'Google sign up failed. Please try again.');
+    }
   };
 
   return (
@@ -118,31 +162,79 @@ const Register = () => {
             </div>
 
             <div className="auth-group">
-              <label htmlFor="email">Email</label>
-              <input
-                id="email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="Enter your email"
-              />
+              <label htmlFor="identifier">Email / Phone No.</label>
+              <div style={{ position: 'relative' }}>
+                <input
+                  id="identifier"
+                  type="text"
+                  value={identifier}
+                  onChange={(e) => {
+                    setIdentifier(e.target.value);
+                    setOtpSent(false);
+                  }}
+                  placeholder="Email or Phone (with +country code)"
+                  style={{ paddingRight: isPhone && !otpSent ? '100px' : '14px' }}
+                />
+                {isPhone && !otpSent && (
+                  <button
+                    type="button"
+                    onClick={handleGetOtp}
+                    disabled={loading}
+                    style={{ position: 'absolute', right: '8px', top: '50%', transform: 'translateY(-50%)', padding: '6px 12px', background: 'var(--primary-blue)', color: 'white', border: 'none', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 600, cursor: 'pointer' }}
+                  >
+                    {loading ? '...' : 'Get OTP'}
+                  </button>
+                )}
+              </div>
             </div>
 
-            <div className="auth-group">
-              <label htmlFor="password">Password</label>
-              <input
-                id="password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="Create a password"
-              />
-            </div>
+            {!otpSent ? (
+              <div className="auth-group">
+                <label htmlFor="password">Password</label>
+                <div style={{ position: 'relative' }}>
+                  <input
+                    id="password"
+                    type={showPassword ? 'text' : 'password'}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="Create a password"
+                    style={{ paddingRight: '44px' }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    aria-label={showPassword ? 'Hide password' : 'Show password'}
+                    style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', padding: '4px', display: 'flex', alignItems: 'center' }}
+                  >
+                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="auth-group">
+                <label htmlFor="otp">Verification Code (OTP)</label>
+                <input
+                  id="otp"
+                  type="text"
+                  maxLength="6"
+                  value={otp}
+                  onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))}
+                  placeholder="Enter 6-digit OTP"
+                />
+              </div>
+            )}
 
             {error && (
               <div className="auth-error">
                 <AlertCircle size={16} />
                 {error}
+              </div>
+            )}
+
+            {success && (
+              <div className="auth-error" style={{ color: 'var(--success)', background: 'rgba(16, 185, 129, 0.05)', borderColor: 'rgba(16, 185, 129, 0.15)' }}>
+                <CheckCircle size={16} />
+                {success}
               </div>
             )}
 

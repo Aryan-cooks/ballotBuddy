@@ -29,41 +29,55 @@
   display: none;
 }
 
+/* ── Bottom Navigation ── */
 .bottom-nav {
   flex-shrink: 0;
   height: 70px;
   display: flex;
-  justify-content: space-around;
+  justify-content: space-evenly;
   align-items: center;
-  padding: 0 var(--space-2);
+  padding: 0 8px;
   z-index: 50;
   border-top-left-radius: var(--radius-xl);
   border-top-right-radius: var(--radius-xl);
 }
 
+/* ── Nav Item ── */
 .nav-item {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  color: var(--text-muted);
-  gap: 4px;
-  text-decoration: none;
-  transition: all var(--transition-fast);
-  padding: var(--space-2);
-  border-radius: var(--radius-lg);
+  gap: 3px;
   flex: 1;
+  min-width: 0;
+  max-width: 80px;
+  padding: 6px 4px;
+  border-radius: var(--radius-lg);
+  color: var(--text-muted);
+  text-decoration: none;
+  transition: color 200ms ease, background-color 200ms ease, transform 150ms ease;
+  position: relative;
 }
 
 .nav-item span {
-  font-size: 0.75rem;
+  font-size: 0.68rem;
   font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  width: 100%;
+  text-align: center;
 }
 
+/* ── Hover ── */
 .nav-item:hover {
   color: var(--primary-blue-light);
+  background-color: rgba(59, 130, 246, 0.07);
+  transform: translateY(-1px);
 }
 
+/* ── Active ── */
 .nav-item.active {
   color: var(--primary-blue);
 }
@@ -72,13 +86,26 @@
   font-weight: 700;
 }
 
-/* Add a subtle indicator for active state */
+/* Active pill indicator */
 .nav-item.active::after {
   content: '';
-  display: block;
-  width: 20px;
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 22px;
   height: 3px;
   background-color: var(--primary-blue);
   border-radius: var(--radius-full);
-  margin-top: 2px;
+}
+
+/* ── Responsive: tablet+ ── */
+@media (min-width: 480px) {
+  .nav-item span {
+    font-size: 0.72rem;
+  }
+  .nav-item {
+    max-width: 100px;
+    padding: 6px 8px;
+  }
 }

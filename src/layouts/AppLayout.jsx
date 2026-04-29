@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Outlet, NavLink, useNavigate } from 'react-router-dom';
-import { Home, BookOpen, Newspaper, ShieldAlert, Globe, Moon, Sun, ChevronDown } from 'lucide-react';
+import { Home, BookOpen, Newspaper, ShieldAlert, UserPlus, Globe, Moon, Sun, ChevronDown } from 'lucide-react';
 import { useTranslation } from '../context/TranslationContext';
 import './AppLayout.css';
 
@@ -46,17 +46,22 @@ const AppLayout = () => {
         </NavLink>
         
         <NavLink to="/modules" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
-          <BookOpen size={24} />
+          <BookOpen size={22} />
           <span>Learn</span>
         </NavLink>
-        
+
+        <NavLink to="/register" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
+          <UserPlus size={22} />
+          <span>Register</span>
+        </NavLink>
+
         <NavLink to="/news" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
-          <Newspaper size={24} />
+          <Newspaper size={22} />
           <span>News</span>
         </NavLink>
-        
+
         <NavLink to="/verify" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
-          <ShieldAlert size={24} />
+          <ShieldAlert size={22} />
           <span>Verify</span>
         </NavLink>
       </nav>

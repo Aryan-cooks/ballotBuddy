@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
-import { CheckSquare, Square, ExternalLink, FileText, MapPin, Camera, ScanFace, CheckCircle, Search } from 'lucide-react';
+import { CheckSquare, Square, ExternalLink, FileText, MapPin, Camera, ScanFace, CheckCircle, Search, Send, Copy, Check } from 'lucide-react';
+import { supabase } from '../lib/supabase';
+import { useAuth } from '../context/AuthContext';
 import Card from '../components/Card';
 import Button from '../components/Button';
 import ProgressBar from '../components/ProgressBar';
@@ -15,16 +17,57 @@ const checklistItems = [
 ];
 
 const RegistrationGuide = () => {
+  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState('guide'); // 'guide' or 'track'
   const [checkedItems, setCheckedItems] = useState({});
   const [showScanner, setShowScanner] = useState(false);
   const [hasScannedID, setHasScannedID] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submissionResult, setSubmissionResult] = useState(null);
+  const [copied, setCopied] = useState(false);
 
   const toggleCheck = (id) => {
     setCheckedItems(prev => ({
       ...prev,
       [id]: !prev[id]
     }));
+  };
+
+  const handleSubmitApplication = async () => {
+    setIsSubmitting(true);
+    
+    // Generate Reference ID: OJA + 9 random digits
+    const refId = `OJA${Math.floor(100000000 + Math.random() * 900000000)}`;
+    
+    try {
+      const { error } = await supabase
+        .from('applications')
+        .insert([
+          { 
+            reference_id: refId, 
+            name: user?.user_metadata?.full_name || user?.email || 'Anonymous User',
+            user_id: user?.id,
+            status: 'Submitted'
+          }
+        ]);
+
+      if (error) throw error;
+
+      // Fake delay for realism
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      setSubmissionResult(refId);
+    } catch (err) {
+      console.error(err);
+      alert("Failed to submit application. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const copyToClipboard = (text) => {
+    navigator.clipboard.writeText(text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
   };
 
   const completedCount = Object.values(checkedItems).filter(Boolean).length + (hasScannedID ? 1 : 0);
@@ -133,23 +176,52 @@ const RegistrationGuide = () => {
             <section className="mb-8">
               <div className="step-header">
                 <span className="step-badge">Step 3</span>
-                <h3>Apply Online or Offline</h3>
+                <h3>Submit Application</h3>
               </div>
               <Card className="mt-4">
-                <p className="mb-4">Once you have the documents ready and identity verified, you can fill out Form 6 online or submit it at your local Electoral Registration Office.</p>
-                <Button 
-                  fullWidth 
-                  variant={progress === 100 ? 'primary' : 'outline'}
-                  icon={<ExternalLink size={18} />}
-                  disabled={progress < 100}
-                  onClick={() => window.open('https://voters.eci.gov.in/', '_blank')}
-                >
-                  Go to Official Portal
-                </Button>
-                {progress < 100 && (
-                  <p className="text-xs text-center text-muted mt-2">
-                    Complete all steps above to unlock the portal link.
-                  </p>
+                {submissionResult ? (
+                  <div className="text-center animate-slide-up">
+                    <div className="mb-4" style={{ display: 'inline-flex', padding: '12px', background: 'rgba(16, 185, 129, 0.1)', borderRadius: '50%' }}>
+                      <CheckCircle size={48} color="var(--success)" />
+                    </div>
+                    <h3 className="text-success mb-2">Application Submitted!</h3>
+                    <p className="text-sm text-muted mb-4">Your mock application for Voter ID has been successfully recorded.</p>
+                    
+                    <div className="p-4 mb-4" style={{ background: 'var(--bg-color)', borderRadius: '12px', border: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <div className="text-left">
+                        <span className="text-xs text-muted">Reference ID</span>
+                        <p className="font-bold text-lg">{submissionResult}</p>
+                      </div>
+                      <button 
+                        onClick={() => copyToClipboard(submissionResult)}
+                        style={{ padding: '8px', borderRadius: '8px', background: 'var(--surface-color)', border: '1px solid var(--border-color)', cursor: 'pointer' }}
+                      >
+                        {copied ? <Check size={18} color="var(--success)" /> : <Copy size={18} />}
+                      </button>
+                    </div>
+                    
+                    <Button fullWidth onClick={() => setActiveTab('track')}>
+                      Track My Status
+                    </Button>
+                  </div>
+                ) : (
+                  <>
+                    <p className="mb-4 text-sm text-muted">Once you have completed all steps, submit your application to receive a reference ID for tracking.</p>
+                    <Button 
+                      fullWidth 
+                      variant={progress === 100 ? 'primary' : 'outline'}
+                      icon={isSubmitting ? null : <Send size={18} />}
+                      disabled={progress < 100 || isSubmitting}
+                      onClick={handleSubmitApplication}
+                    >
+                      {isSubmitting ? 'Submitting...' : 'Submit Application'}
+                    </Button>
+                    {progress < 100 && (
+                      <p className="text-xs text-center text-muted mt-2">
+                        Complete identity verification and all checklist items to submit.
+                      </p>
+                    )}
+                  </>
                 )}
               </Card>
             </section>

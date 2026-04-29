@@ -1,74 +1,111 @@
 import React, { useState, useEffect } from 'react';
-import { Newspaper, ExternalLink, Clock, Calendar, CheckCircle } from 'lucide-react';
+import { Newspaper, ExternalLink, Clock, Calendar, CheckCircle, AlertCircle, RefreshCw, Info } from 'lucide-react';
+import { supabase } from '../lib/supabase';
 import Card from '../components/Card';
+import Button from '../components/Button';
 import './NewsFeed.css';
-
-const mockNews = [
-  {
-    id: 1,
-    title: 'Election Commission Announces Final Dates for Upcoming State Assembly Elections',
-    source: 'ECI Official Press Release',
-    date: '2 Hours Ago',
-    category: 'Official',
-    readTime: '3 min read',
-    summary: 'The Election Commission of India has officially released the schedule for the upcoming assembly elections. Polling will take place in three phases starting next month.',
-    isOfficial: true,
-  },
-  {
-    id: 2,
-    title: 'Fact Check: Viral message claiming EVs can be hacked via Bluetooth is FALSE',
-    source: 'BallotBuddy Fact Checkers',
-    date: '5 Hours Ago',
-    category: 'Fact Check',
-    readTime: '4 min read',
-    summary: 'A viral WhatsApp forward claims that EVMs can be manipulated using Bluetooth signals. The ECI has confirmed EVMs are standalone machines with no wireless communication capabilities.',
-    isOfficial: false,
-  },
-  {
-    id: 3,
-    title: 'Voter Registration Drive Hits Record Numbers Among Youth',
-    source: 'National Daily News',
-    date: '1 Day Ago',
-    category: 'General',
-    readTime: '2 min read',
-    summary: 'A surge in first-time voters has been recorded following the recent nationwide awareness campaigns. Over 5 million new voters aged 18-19 have registered.',
-    isOfficial: false,
-  },
-  {
-    id: 4,
-    title: 'Understanding VVPAT: How the Paper Trail Ensures Transparency',
-    source: 'Democracy Watch',
-    date: '2 Days Ago',
-    category: 'Education',
-    readTime: '5 min read',
-    summary: 'Voter Verifiable Paper Audit Trail (VVPAT) machines are attached to every EVM. Heres how they provide a physical paper record of your vote.',
-    isOfficial: false,
-  }
-];
 
 const NewsFeed = () => {
   const [activeFilter, setActiveFilter] = useState('All');
+  const [news, setNews] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
   const filters = ['All', 'Official', 'Fact Check', 'General'];
 
-  useEffect(() => {
+  const fetchNews = async (forceRefresh = false) => {
     setIsLoading(true);
-    const timer = setTimeout(() => {
+    setError(null);
+    try {
+      const { data, error: functionError } = await supabase.functions.invoke('get-news');
+      
+      if (functionError) throw functionError;
+      if (data.error) throw new Error(data.error);
+
+      setNews(data);
+    } catch (err) {
+      console.error('Failed to fetch news:', err);
+      setError('Unable to load latest news. Please check your connection or try again later.');
+    } finally {
       setIsLoading(false);
-    }, 1200);
-    return () => clearTimeout(timer);
-  }, [activeFilter]);
+      setIsRefreshing(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchNews();
+  }, []);
+
+  const handleRefresh = () => {
+    setIsRefreshing(true);
+    fetchNews(true);
+  };
+
+  const getCategory = (article) => {
+    const title = article.title.toLowerCase();
+    const source = article.source.toLowerCase();
+    
+    // Official Keywords
+    if (
+      title.includes('eci') || title.includes('election commission') || 
+      title.includes('pib') || title.includes('government') ||
+      source.includes('eci') || source.includes('pib')
+    ) {
+      return 'Official';
+    }
+    
+    // Fact Check Keywords
+    if (
+      title.includes('fake') || title.includes('fact check') || 
+      title.includes('myth') || title.includes('false') || 
+      title.includes('viral') || title.includes('debunk')
+    ) {
+      return 'Fact Check';
+    }
+    
+    return 'General';
+  };
+
+  const getTimeAgo = (dateString) => {
+    const now = new Date();
+    const past = new Date(dateString);
+    const diffInMs = now - past;
+    const diffInHours = Math.floor(diffInMs / (1000 * 60 * 60));
+    
+    if (diffInHours < 1) {
+      const diffInMins = Math.floor(diffInMs / (1000 * 60));
+      return `${diffInMins} mins ago`;
+    }
+    if (diffInHours < 24) return `${diffInHours} hours ago`;
+    return `${Math.floor(diffInHours / 24)} days ago`;
+  };
+
+  const processedNews = news.map(article => ({
+    ...article,
+    category: getCategory(article),
+    timeAgo: getTimeAgo(article.publishedAt)
+  }));
 
   const filteredNews = activeFilter === 'All' 
-    ? mockNews 
-    : mockNews.filter(news => news.category === activeFilter);
+    ? processedNews 
+    : processedNews.filter(n => n.category === activeFilter);
 
   return (
     <div className="news-feed-container animate-fade-in">
       <div className="container mt-0 pb-20">
-        <div className="page-header mb-4 mt-2">
-          <h1 style={{ fontSize: '1.75rem', marginBottom: '4px' }}>Election News</h1>
-          <p className="text-muted mt-0">Stay updated with official announcements, fact-checks, and general election news.</p>
+        <div className="page-header mb-4 mt-2 flex-between">
+          <div>
+            <h1 style={{ fontSize: '1.75rem', marginBottom: '4px' }}>Election News</h1>
+            <p className="text-muted mt-0">Real-time updates, official notices, and fact-checks.</p>
+          </div>
+          <button 
+            onClick={handleRefresh} 
+            className={`refresh-btn ${isRefreshing ? 'spinning' : ''}`}
+            disabled={isLoading}
+          >
+            <RefreshCw size={20} />
+          </button>
         </div>
 
         <div className="news-filters mb-6">
@@ -85,58 +122,81 @@ const NewsFeed = () => {
 
         <div className="news-list">
           {isLoading ? (
-            Array.from({ length: 3 }).map((_, i) => (
+            Array.from({ length: 4 }).map((_, i) => (
               <div key={i} className="news-card skeleton-card">
                 <div className="skeleton-header">
                   <div className="skeleton-tag shimmer"></div>
                   <div className="skeleton-time shimmer"></div>
                 </div>
                 <div className="skeleton-title shimmer"></div>
-                <div className="skeleton-title short shimmer"></div>
-                <div className="skeleton-summary shimmer"></div>
                 <div className="skeleton-summary shimmer"></div>
                 <div className="skeleton-footer">
                   <div className="skeleton-source shimmer"></div>
-                  <div className="skeleton-read-time shimmer"></div>
                 </div>
               </div>
             ))
-          ) : (
-            filteredNews.map((news, index) => (
-              <Card key={news.id} className={`news-card animate-slide-up category-${news.category.replace(/\s+/g, '-').toLowerCase()}`} style={{ animationDelay: `${index * 0.1}s` }}>
-              <div className="news-header">
-                <div className={`news-tag tag-${news.category.replace(/\s+/g, '-').toLowerCase()}`}>
-                  {news.category === 'Official' ? '🔵 Official Update' : 
-                   news.category === 'Fact Check' ? '🔴 Fact Check' : 
-                   news.category === 'Education' ? '🟠 Education' :
-                   '⚪ General'}
-                </div>
-                <span className="news-time">
-                  <Clock size={12} /> {news.date}
-                </span>
-              </div>
-              
-              <h3 className="news-title">{news.title}</h3>
-              
-              <p className="news-summary text-muted text-sm">{news.summary}</p>
-              
-              <div className="news-footer">
-                <div className="news-source">
-                  {news.isOfficial && <CheckCircle size={14} color="var(--primary-blue)" />}
-                  <span className={news.isOfficial ? 'text-primary font-medium' : 'text-muted'}>{news.source}</span>
-                </div>
-                <div className="news-read-time text-xs text-muted">
-                  {news.readTime}
-                </div>
-              </div>
-            </Card>
-          ))
-          )}
-          
-          {!isLoading && filteredNews.length === 0 && (
-            <div className="text-center p-8 text-muted">
-              <p>No news found for this category.</p>
+          ) : error ? (
+            <div className="error-state text-center p-8 bg-surface rounded-xl border">
+              <AlertCircle size={40} className="text-error mb-3 mx-auto" />
+              <p className="font-bold mb-1">Oops!</p>
+              <p className="text-sm text-muted mb-4">{error}</p>
+              <Button onClick={handleRefresh}>Try Again</Button>
             </div>
+          ) : filteredNews.length === 0 ? (
+            <div className="empty-state text-center p-12">
+              <Newspaper size={48} className="text-muted mb-4 mx-auto opacity-20" />
+              <h3 className="text-muted">No news available</h3>
+              <p className="text-sm text-muted mt-2">Check back later for fresh updates.</p>
+            </div>
+          ) : (
+            filteredNews.map((article, index) => (
+              <a 
+                key={index} 
+                href={article.url} 
+                target="_blank" 
+                rel="noopener noreferrer" 
+                className="news-card-link"
+              >
+                <Card className={`news-card animate-slide-up category-${article.category.toLowerCase().replace(' ', '-')}`} style={{ animationDelay: `${index * 0.05}s` }}>
+                  <div className="news-header">
+                    <div className={`news-tag tag-${article.category.toLowerCase().replace(' ', '-')}`}>
+                      {article.category === 'Official' ? '🔵 Official' : 
+                       article.category === 'Fact Check' ? '🔴 Fact Check' : 
+                       '⚪ General'}
+                    </div>
+                    <span className="news-time">
+                      <Clock size={12} /> {article.timeAgo}
+                    </span>
+                  </div>
+                  
+                  <div className="news-content-layout">
+                    {article.image && (
+                      <div className="news-thumbnail-wrapper">
+                        <img src={article.image} alt="" className="news-thumbnail" loading="lazy" />
+                      </div>
+                    )}
+                    <div className="news-text">
+                      <h3 className="news-title">{article.title}</h3>
+                      <p className="news-summary text-muted text-sm">{article.description}</p>
+                      
+                      {article.title.split(' ').some(w => ['EVM', 'VVPAT', 'Supreme', 'Verdict'].includes(w)) && (
+                        <span className="trending-badge">🔥 Trending</span>
+                      )}
+                    </div>
+                  </div>
+                  
+                  <div className="news-footer mt-3">
+                    <div className="news-source">
+                      {article.category === 'Official' && <CheckCircle size={14} color="var(--primary-blue)" />}
+                      <span className={article.category === 'Official' ? 'text-primary font-medium' : 'text-muted'}>
+                        {article.source}
+                      </span>
+                    </div>
+                    <ExternalLink size={14} className="text-muted" />
+                  </div>
+                </Card>
+              </a>
+            ))
           )}
         </div>
       </div>

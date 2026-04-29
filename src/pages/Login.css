@@ -85,10 +85,10 @@
 
 .auth-group input {
   width: 100%;
-  padding: 16px;
-  border: none;
-  border-radius: 8px;
-  font-size: 1rem;
+  padding: 12px 14px;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  font-size: 0.95rem;
   background: var(--surface-color);
   color: var(--text-primary);
   transition: all var(--transition-fast);
@@ -101,9 +101,9 @@
 
 .auth-btn {
   width: 100%;
-  padding: 16px;
-  border-radius: 9999px;
-  font-size: 1rem;
+  padding: 14px;
+  border-radius: 6px;
+  font-size: 0.95rem;
   font-weight: 600;
   cursor: pointer;
   margin-top: var(--space-2);
@@ -140,14 +140,20 @@
 
 .auth-error {
   display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  padding: var(--space-3);
-  background: var(--error-light);
-  border-radius: 8px;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 10px 12px;
+  background: rgba(239, 68, 68, 0.05);
+  border-radius: 6px;
   color: var(--error);
-  font-size: 0.85rem;
-  border: 1px solid rgba(239, 68, 68, 0.2);
+  font-size: 0.8rem;
+  border: 1px solid rgba(239, 68, 68, 0.15);
+  line-height: 1.4;
+}
+
+.auth-error svg {
+  margin-top: 1px;
+  flex-shrink: 0;
 }
 
 .auth-message {

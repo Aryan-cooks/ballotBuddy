@@ -1,17 +1,19 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Play, Award, Flame, BookOpen, ShieldCheck, FileText, Clock, MapPin, Newspaper, UserCheck, CheckCircle, Moon, Sun } from 'lucide-react';
+import { Play, Award, Flame, BookOpen, ShieldCheck, FileText, Clock, MapPin, Newspaper, UserCheck, CheckCircle, Moon, Sun, LogOut } from 'lucide-react';
 import Card from '../components/Card';
 import ProgressBar from '../components/ProgressBar';
 import Button from '../components/Button';
 import { useProgress } from '../context/ProgressContext';
 import { useTranslation } from '../context/TranslationContext';
+import { useAuth } from '../context/AuthContext';
 import './HomeDashboard.css';
 
 const HomeDashboard = () => {
   const navigate = useNavigate();
   const { democracyScore, modules } = useProgress();
   const { t } = useTranslation();
+  const { signOut, user } = useAuth();
   const [darkMode, setDarkMode] = useState(() => localStorage.getItem('darkMode') === 'true');
   const toggleDarkMode = () => {
     const newDarkMode = !darkMode;
@@ -102,10 +104,18 @@ const HomeDashboard = () => {
         {/* Top Right Controls */}
         <div style={{ position: 'absolute', top: 0, right: 0, display: 'flex', gap: '8px', alignItems: 'center' }}>
           <button 
-            onClick={() => navigate('/login')}
-            style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '6px 14px', borderRadius: '100px', background: 'var(--primary-blue)', color: 'white', border: 'none', cursor: 'pointer', boxShadow: 'var(--shadow-sm)', fontWeight: 600, fontSize: '0.8rem' }}
+            onClick={async () => {
+              try {
+                await signOut();
+                navigate('/login');
+              } catch (err) {
+                console.error('Logout failed:', err);
+              }
+            }}
+            style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', padding: '6px 14px', borderRadius: '100px', background: 'var(--error, #ef4444)', color: 'white', border: 'none', cursor: 'pointer', boxShadow: 'var(--shadow-sm)', fontWeight: 600, fontSize: '0.8rem' }}
           >
-            Login
+            <LogOut size={14} />
+            Logout
           </button>
           <button 
             onClick={toggleDarkMode}
