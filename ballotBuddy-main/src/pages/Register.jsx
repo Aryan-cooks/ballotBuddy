@@ -21,6 +21,24 @@ const Register = () => {
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
   const [showPassword, setShowPassword] = useState(false);
+  const [timer, setTimer] = useState(0);
+
+  useEffect(() => {
+    let interval;
+    if (otpSent && timer > 0) {
+      interval = setInterval(() => setTimer(t => t - 1), 1000);
+    }
+    return () => clearInterval(interval);
+  }, [otpSent, timer]);
+
+  const maskPhone = (phone) => {
+    const digits = phone.replace(/\D/g, '');
+    if (digits.length >= 4) {
+      const last4 = digits.slice(-4);
+      return `+91 •••• ${last4}`;
+    }
+    return phone;
+  };
 
   const isPhone = !identifier.includes('@') && identifier.trim().length >= 7 && /^[0-9+ \-]+$/.test(identifier);
   const isEmail = validateEmail(identifier);
@@ -47,6 +65,7 @@ const Register = () => {
     try {
       await signInWithPhone(identifier);
       setOtpSent(true);
+      setTimer(30);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -201,6 +220,9 @@ const Register = () => {
             ) : (
               <div className="auth-group">
                 <label htmlFor="otp">Verification Code (OTP)</label>
+                <div style={{ marginBottom: '8px', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
+                  Sent to {maskPhone(identifier)}
+                </div>
                 <input
                   id="otp"
                   type="text"
@@ -208,7 +230,21 @@ const Register = () => {
                   value={otp}
                   onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))}
                   placeholder="Enter 6-digit OTP"
+                  autoFocus
                 />
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '12px', fontSize: '0.85rem' }}>
+                  <span style={{ color: timer > 0 ? 'var(--text-secondary)' : 'var(--error)' }}>
+                    {timer > 0 ? `Expires in ${timer}s` : 'OTP Expired'}
+                  </span>
+                  <button 
+                    type="button" 
+                    onClick={handleGetOtp} 
+                    disabled={timer > 0 || loading}
+                    style={{ background: 'none', border: 'none', color: timer > 0 ? 'var(--text-muted)' : 'var(--primary-blue)', fontWeight: 600, cursor: timer > 0 ? 'not-allowed' : 'pointer', padding: 0 }}
+                  >
+                    Resend OTP
+                  </button>
+                </div>
               </div>
             )}
 

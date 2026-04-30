@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { ProgressProvider } from './context/ProgressContext';
 import { TranslationProvider } from './context/TranslationContext';
 import { AuthProvider, useAuth } from './context/AuthContext';
@@ -13,10 +13,12 @@ import VerifyNews from './pages/VerifyNews';
 import RegistrationGuide from './pages/RegistrationGuide';
 import Login from './pages/Login';
 import Register from './pages/Register';
+import Onboarding from './pages/Onboarding';
 import './App.css';
 
-const ProtectedRoute = ({ children }) => {
-  const { user, loading } = useAuth();
+const ProtectedRoute = ({ children, requireProfile = true }) => {
+  const { user, profile, loading } = useAuth();
+  const location = useLocation();
 
   if (loading) {
     return (
@@ -28,6 +30,14 @@ const ProtectedRoute = ({ children }) => {
 
   if (!user) {
     return <Navigate to="/login" replace />;
+  }
+
+  if (requireProfile && !profile) {
+    return <Navigate to="/onboarding" replace />;
+  }
+
+  if (!requireProfile && profile && location.pathname === '/onboarding') {
+    return <Navigate to="/" replace />;
   }
 
   return children;
@@ -43,7 +53,8 @@ function App() {
               <Routes>
                 <Route path="/login" element={<Login />} />
                 <Route path="/signup" element={<Register />} />
-                <Route path="/" element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
+                <Route path="/onboarding" element={<ProtectedRoute requireProfile={false}><Onboarding /></ProtectedRoute>} />
+                <Route path="/" element={<ProtectedRoute requireProfile={true}><AppLayout /></ProtectedRoute>}>
                   <Route index element={<HomeDashboard />} />
                   <Route path="modules" element={<LearningModules />} />
                   <Route path="news" element={<NewsFeed />} />
