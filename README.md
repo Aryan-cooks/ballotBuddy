@@ -28,7 +28,7 @@
 - **📱 Progressive Web App** — Installable on desktop and mobile with offline capability via `vite-plugin-pwa`.
 - **🔗 Client-Side Routing** — Smooth navigation with React Router DOM v7.
 - **📰 News Display Feature** — Has a Completely independent feature of displaying Updated and Well Researched News Using News-API, Which helps user to identify correctly which news is original and which is fake.
-
+- **🚀 Deployment** — Deployed the application on Google Cloud Run using a containerized backend built with Docker. Implemented a CI/CD pipeline with Google Cloud Build for automated builds and deployments. Used Express.js as the backend server to handle API requests, routing, and middleware management.
 ---
 
 ## 🛠️ Tech Stack
