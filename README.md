@@ -43,7 +43,7 @@
 | Icons | Lucide React |
 | PWA | vite-plugin-pwa |
 | Linting | ESLint 10 |
-
+| Deployment | Google Cloud Run(Cloud Run API, Cloud Build API), Docker Container, Express JS | 
 ---
 
 ## 🗃️ Database Schema
