@@ -14,17 +14,19 @@ const IDScanner = ({ onScanSuccess, onCancel }) => {
   const [error, setError] = useState(null);
   const [showDebug, setShowDebug] = useState(false);
   const [isCameraOpen, setIsCameraOpen] = useState(false);
-  const [stream, setStream] = useState(null);
+  const [streamReady, setStreamReady] = useState(false); // triggers re-render when stream starts
+  // useRef so the cleanup function always sees the live stream, not a stale closure
+  const streamRef = useRef(null);
   const [capturedBlob, setCapturedBlob] = useState(null);
   const fileInputRef = useRef(null);
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
 
   useEffect(() => {
-    if (isCameraOpen && stream && videoRef.current && !videoRef.current.srcObject) {
-      videoRef.current.srcObject = stream;
+    if (isCameraOpen && streamRef.current && videoRef.current && !videoRef.current.srcObject) {
+      videoRef.current.srcObject = streamRef.current;
     }
-  }, [isCameraOpen, stream]);
+  }, [isCameraOpen]);
 
   useEffect(() => {
     document.body.style.overflow = 'hidden';
@@ -43,26 +45,36 @@ const IDScanner = ({ onScanSuccess, onCancel }) => {
   }, []);
 
   const startCamera = async () => {
-    setIsCameraOpen(true); // Switch UI immediately
+    setIsCameraOpen(true);
+    setStreamReady(false); // show initializing until stream is live
     setError(null);
     
     try {
       const mediaStream = await navigator.mediaDevices.getUserMedia({ 
         video: { facingMode: "environment", width: { ideal: 1280 }, height: { ideal: 720 } } 
       });
-      setStream(mediaStream);
+      streamRef.current = mediaStream;
+      if (videoRef.current) {
+        videoRef.current.srcObject = mediaStream;
+      }
+      setStreamReady(true); // hide initializing, show video
     } catch (err) {
       console.error(err);
       setIsCameraOpen(false);
+      setStreamReady(false);
       setError("Camera access denied. Please allow camera permissions or upload a file.");
     }
   };
 
   const stopCamera = () => {
-    if (stream) {
-      stream.getTracks().forEach(track => track.stop());
-      setStream(null);
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(track => track.stop());
+      streamRef.current = null;
     }
+    if (videoRef.current) {
+      videoRef.current.srcObject = null;
+    }
+    setStreamReady(false);
     setIsCameraOpen(false);
   };
 
@@ -156,7 +168,7 @@ const IDScanner = ({ onScanSuccess, onCancel }) => {
   const modalContent = (
     <div className="id-scanner-overlay animate-slide-up">
       <Card className="id-scanner-card">
-        <button className="close-btn" onClick={onCancel}><X size={24} /></button>
+        <button className="close-btn" onClick={() => { stopCamera(); onCancel(); }}><X size={24} /></button>
         
         <div className="id-scanner-body">
           <header className="text-center mb-6 mt-4">
@@ -201,20 +213,20 @@ const IDScanner = ({ onScanSuccess, onCancel }) => {
             </div>
           ) : isCameraOpen ? (
             <div className="camera-section text-center">
-              <div className="video-container" style={{ position: 'relative', overflow: 'hidden', borderRadius: '12px', background: '#000', marginBottom: '16px', aspectRatio: '4/3', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                {!stream && (
-                  <div className="flex-center flex-column gap-3">
-                    <div className="animate-spin" style={{ width: 30, height: 30, border: '3px solid #333', borderTopColor: 'var(--primary-blue)', borderRadius: '50%' }} />
-                    <p style={{ color: '#fff', fontSize: '0.8rem' }}>Initializing camera...</p>
+              <div className="video-container" style={{ position: 'relative', overflow: 'hidden', borderRadius: '12px', background: '#000', marginBottom: '16px', width: '100%', minHeight: '200px', aspectRatio: '4/3', display: 'flex', alignItems: 'center', justifyContent: 'center', boxSizing: 'border-box' }}>
+                {!streamReady && (
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '12px', padding: '16px', position: 'absolute', inset: 0 }}>
+                    <div className="animate-spin" style={{ width: 32, height: 32, border: '3px solid rgba(255,255,255,0.2)', borderTopColor: 'var(--primary-blue)', borderRadius: '50%', flexShrink: 0 }} />
+                    <p style={{ color: '#fff', fontSize: '0.85rem', margin: 0, whiteSpace: 'nowrap' }}>Initializing camera...</p>
                   </div>
                 )}
                 <video 
                   ref={videoRef} 
                   autoPlay 
                   playsInline 
-                  style={{ width: '100%', height: '100%', objectFit: 'cover', display: stream ? 'block' : 'none' }} 
+                  style={{ width: '100%', height: '100%', objectFit: 'cover', display: streamReady ? 'block' : 'none' }} 
                 />
-                {stream && (
+                {streamReady && (
                   <div className="camera-guide" style={{ position: 'absolute', top: '10%', left: '10%', right: '10%', bottom: '10%', border: '2px dashed rgba(255, 255, 255, 0.5)', borderRadius: '8px', pointerEvents: 'none' }}>
                     <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', color: 'rgba(255, 255, 255, 0.5)', fontSize: '0.7rem', fontWeight: 600, textAlign: 'center', width: '80%' }}>
                       ALIGN ID WITHIN FRAME
@@ -242,7 +254,7 @@ const IDScanner = ({ onScanSuccess, onCancel }) => {
               ) : capturedBlob && !scanResult ? (
                 <div className="capture-actions flex-center gap-4 mt-4">
                   <Button variant="outline" onClick={() => { setImagePreview(null); setCapturedBlob(null); setError(null); startCamera(); }}>Retake</Button>
-                  <Button onClick={() => handleProcessImage(capturedBlob)}>Confirm & Upload</Button>
+                  <Button onClick={() => handleProcessImage(capturedBlob)}>Confirm &amp; Upload</Button>
                 </div>
               ) : scanResult ? (
                 <div className="result-state animate-slide-up">
