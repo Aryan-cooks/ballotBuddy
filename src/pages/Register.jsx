@@ -89,13 +89,14 @@ const Register = () => {
     try {
       if (otpSent) {
         await verifyPhoneOtp(identifier, otp);
-        // Metadata (username) update could go here if needed
         navigate('/');
       } else {
-        const data = await signUpWithEmail(identifier, password, username);
-        if (data.user && !data.session) {
-          setSuccess('Account created! Check your email to confirm, then log in.');
+        const result = await signUpWithEmail(identifier, password, username);
+        if (result.requiresConfirmation) {
+          // Email confirmation is enabled in Supabase — user must verify first
+          setSuccess('Account created! Please check your email to confirm, then log in.');
         } else {
+          // Email confirmation is disabled — user is logged in immediately
           navigate('/');
         }
       }
