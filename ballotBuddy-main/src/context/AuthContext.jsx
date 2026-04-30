@@ -67,6 +67,21 @@ export const AuthProvider = ({ children }) => {
     });
     if (error) throw new Error(friendlyError(error.message));
     
+    // Ensure profile exists (handling case if DB trigger is absent)
+    if (data.user) {
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .upsert({
+          id: data.user.id,
+          email: email,
+          username: username,
+        }, { onConflict: 'id' });
+        
+      if (profileError) {
+        console.error('Error creating profile:', profileError);
+      }
+    }
+
     // If no session returned (email confirmation required), try to sign in directly
     if (data.user && !data.session) {
       // Attempt auto-login — will work if email confirmation is disabled

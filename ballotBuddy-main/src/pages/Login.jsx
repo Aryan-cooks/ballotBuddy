@@ -1,31 +1,29 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { Loader2, AlertCircle, CheckCircle, Sun, Moon, Eye, EyeOff } from 'lucide-react';
+import { Loader2, AlertCircle, Sun, Moon, Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import './Register.css';
+import { useTheme } from '../context/ThemeContext';
+import './Login.css';
 
 const validateEmail = (email) => {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 };
 
-const Register = () => {
+const Login = () => {
   const navigate = useNavigate();
-  const { signUpWithEmail, signInWithGoogle, signInWithPhone, verifyPhoneOtp, user } = useAuth();
-  const [username, setUsername] = useState('');
+  const { signInWithEmail, signInWithGoogle, signInWithPhone, verifyPhoneOtp, user } = useAuth();
   const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [otp, setOtp] = useState('');
   const [otpSent, setOtpSent] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [success, setSuccess] = useState(null);
   const [showPassword, setShowPassword] = useState(false);
 
   const isPhone = !identifier.includes('@') && identifier.trim().length >= 7 && /^[0-9+ \-]+$/.test(identifier);
   const isEmail = validateEmail(identifier);
 
-  // Layout states
-  const [darkMode, setDarkMode] = useState(() => localStorage.getItem('darkMode') === 'true');
+  const { darkMode, toggleDarkMode } = useTheme();
 
   // If already logged in, redirect to home
   useEffect(() => {
@@ -34,20 +32,7 @@ const Register = () => {
     }
   }, [user, navigate]);
 
-  useEffect(() => {
-    if (darkMode) {
-      document.body.classList.add('dark-mode');
-      localStorage.setItem('darkMode', 'true');
-    } else {
-      document.body.classList.remove('dark-mode');
-      localStorage.setItem('darkMode', 'false');
-    }
-  }, [darkMode]);
-
-  const toggleDarkMode = () => setDarkMode(!darkMode);
-
-  const usernameValid = username.trim().length > 2;
-  const formValid = otpSent ? otp.length === 6 : (isEmail ? (password.length >= 6 && usernameValid) : false);
+  const formValid = otpSent ? otp.length === 6 : (isEmail ? password.length >= 6 : false);
 
   const handleGetOtp = async () => {
     if (!isPhone) {
@@ -66,45 +51,37 @@ const Register = () => {
     }
   };
 
-  const handleRegister = async (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
     if (!formValid) {
       if (otpSent) setError('Please enter the 6-digit OTP');
-      else if (!usernameValid) setError('Username must be at least 3 characters');
       else if (isEmail) setError('Password must be at least 6 characters');
       else setError('Please enter a valid email or phone number');
       return;
     }
     setError(null);
-    setSuccess(null);
     setLoading(true);
     
     try {
       if (otpSent) {
         await verifyPhoneOtp(identifier, otp);
-        // Metadata (username) update could go here if needed
-        navigate('/');
       } else {
-        const data = await signUpWithEmail(identifier, password, username);
-        if (data.user && !data.session) {
-          setSuccess('Account created! Check your email to confirm, then log in.');
-        } else {
-          navigate('/');
-        }
+        await signInWithEmail(identifier, password);
       }
+      navigate('/');
     } catch (err) {
-      setError(err.message || 'Registration failed. Please try again.');
+      setError(err.message || 'Authentication failed. Please try again.');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleGoogleSignup = async () => {
+  const handleGoogleLogin = async () => {
     setError(null);
     try {
       await signInWithGoogle();
     } catch (err) {
-      setError(err.message || 'Google sign up failed. Please try again.');
+      setError(err.message || 'Google login failed. Please try again.');
     }
   };
 
@@ -131,7 +108,7 @@ const Register = () => {
           </span>
         </Link>
         <div className="auth-actions" style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-          <Link to="/login" style={{ marginRight: '8px', fontWeight: 600 }}>Log in</Link>
+          <Link to="/signup" style={{ marginRight: '8px', fontWeight: 600 }}>Create an Account</Link>
 
           <button 
             type="button"
@@ -145,22 +122,10 @@ const Register = () => {
       </div>
 
       <div className="auth-container">
-        <h2 className="auth-title">Register</h2>
+        <h2 className="auth-title">Log in</h2>
         
         <div className="auth-form-wrapper">
-          <form onSubmit={handleRegister} className="auth-form">
-            <div className="auth-group">
-              <label htmlFor="username">Username</label>
-              <input
-                id="username"
-                type="text"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                placeholder="Enter full name"
-                autoFocus
-              />
-            </div>
-
+          <form onSubmit={handleLogin} className="auth-form">
             <div className="auth-group">
               <label htmlFor="identifier">Email / Phone No.</label>
               <div style={{ position: 'relative' }}>
@@ -173,6 +138,7 @@ const Register = () => {
                     setOtpSent(false);
                   }}
                   placeholder="Email or Phone (with +country code)"
+                  autoFocus
                   style={{ paddingRight: isPhone && !otpSent ? '100px' : '14px' }}
                 />
                 {isPhone && !otpSent && (
@@ -187,7 +153,7 @@ const Register = () => {
                 )}
               </div>
             </div>
-
+            
             {!otpSent ? (
               <div className="auth-group">
                 <label htmlFor="password">Password</label>
@@ -197,7 +163,7 @@ const Register = () => {
                     type={showPassword ? 'text' : 'password'}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    placeholder="Create a password"
+                    placeholder="Enter your password"
                     style={{ paddingRight: '44px' }}
                   />
                   <button
@@ -231,21 +197,14 @@ const Register = () => {
               </div>
             )}
 
-            {success && (
-              <div className="auth-error" style={{ color: 'var(--success)', background: 'rgba(16, 185, 129, 0.05)', borderColor: 'rgba(16, 185, 129, 0.15)' }}>
-                <CheckCircle size={16} />
-                {success}
-              </div>
-            )}
-
             <button
               type="submit"
               disabled={!formValid || loading}
               className="auth-btn"
             >
-              {loading ? <Loader2 size={18} className="animate-spin" /> : 'Sign up'}
+              {loading ? <Loader2 size={18} className="animate-spin" /> : 'Log in'}
             </button>
-
+            
             <div className="auth-divider" style={{ textAlign: 'center', margin: '20px 0', color: 'var(--text-secondary)', fontSize: '0.9rem', position: 'relative' }}>
               <span style={{ background: 'var(--surface-color)', padding: '0 10px', position: 'relative', zIndex: 1 }}>OR</span>
               <div style={{ position: 'absolute', top: '50%', left: 0, right: 0, height: '1px', background: 'var(--border-color)', zIndex: 0 }}></div>
@@ -253,7 +212,7 @@ const Register = () => {
             
             <button
               type="button"
-              onClick={handleGoogleSignup}
+              onClick={handleGoogleLogin}
               className="auth-btn secondary"
               style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', background: 'white', color: '#333', border: '1px solid #ddd' }}
             >
@@ -263,7 +222,7 @@ const Register = () => {
                 <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
                 <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
               </svg>
-              Sign up with Google
+              Login with Google
             </button>
           </form>
         </div>
@@ -272,4 +231,4 @@ const Register = () => {
   );
 };
 
-export default Register;
+export default Login;
