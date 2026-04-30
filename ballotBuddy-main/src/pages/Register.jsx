@@ -121,16 +121,9 @@ const Register = () => {
         <Link to="/" className="auth-logo" style={{ gap: '12px', display: 'flex', alignItems: 'center' }}>
           <div style={{ background: 'var(--surface-color)', width: '40px', height: '40px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: 'var(--shadow-md)', overflow: 'hidden', border: '1px solid var(--border-color)' }}>
             <img 
-              src="/logo.png" 
+              src={darkMode ? "/logo_dark_mode.png" : "/logo.png"} 
               alt="BallotBuddy Logo" 
-              className="logo-light"
               style={{ width: '85%', height: '85%', objectFit: 'contain' }} 
-            />
-            <img 
-              src="/logo_dark_mode.png" 
-              alt="BallotBuddy Logo Dark" 
-              className="logo-dark"
-              style={{ width: '85%', height: '85%', objectFit: 'contain', display: 'none' }} 
             />
           </div>
           <span className="notranslate" style={{ fontSize: '1.5rem', margin: 0, fontWeight: 800, color: 'var(--primary-blue-dark)', letterSpacing: '-0.5px' }}>

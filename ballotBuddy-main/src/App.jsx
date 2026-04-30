@@ -14,6 +14,11 @@ import RegistrationGuide from './pages/RegistrationGuide';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Onboarding from './pages/Onboarding';
+import Profile from './pages/Profile';
+import Progress from './pages/Progress';
+import VoterStatus from './pages/VoterStatus';
+import Submissions from './pages/Submissions';
+import Settings from './pages/Settings';
 import './App.css';
 
 const ProtectedRoute = ({ children, requireProfile = true }) => {
@@ -54,6 +59,11 @@ function App() {
                 <Route path="/login" element={<Login />} />
                 <Route path="/signup" element={<Register />} />
                 <Route path="/onboarding" element={<ProtectedRoute requireProfile={false}><Onboarding /></ProtectedRoute>} />
+                <Route path="/profile" element={<ProtectedRoute requireProfile={true}><Profile /></ProtectedRoute>} />
+                <Route path="/progress" element={<ProtectedRoute requireProfile={true}><Progress /></ProtectedRoute>} />
+                <Route path="/voter-status" element={<ProtectedRoute requireProfile={true}><VoterStatus /></ProtectedRoute>} />
+                <Route path="/submissions" element={<ProtectedRoute requireProfile={true}><Submissions /></ProtectedRoute>} />
+                <Route path="/settings" element={<ProtectedRoute requireProfile={true}><Settings /></ProtectedRoute>} />
                 <Route path="/" element={<ProtectedRoute requireProfile={true}><AppLayout /></ProtectedRoute>}>
                   <Route index element={<HomeDashboard />} />
                   <Route path="modules" element={<LearningModules />} />

@@ -4,6 +4,7 @@ import { Play, Award, Flame, BookOpen, ShieldCheck, FileText, Clock, MapPin, New
 import Card from '../components/Card';
 import ProgressBar from '../components/ProgressBar';
 import Button from '../components/Button';
+import ProfileDropdown from '../components/ProfileDropdown';
 import { useProgress } from '../context/ProgressContext';
 import { useTranslation } from '../context/TranslationContext';
 import { useAuth } from '../context/AuthContext';
@@ -93,56 +94,16 @@ const HomeDashboard = () => {
       <div className="branding-section mt-2" style={{ position: 'relative' }}>
         
         {/* Top Right Controls */}
-        <div style={{ position: 'absolute', top: 0, right: 0, display: 'flex', gap: '8px', alignItems: 'center' }}>
-          <button 
-            onClick={toggleDarkMode}
-            style={{ 
-              display: 'flex', 
-              alignItems: 'center', 
-              justifyContent: 'center', 
-              width: '32px', 
-              height: '32px', 
-              borderRadius: '50%', 
-              background: darkMode ? 'var(--primary-blue)' : 'var(--surface-color)', 
-              color: darkMode ? 'white' : 'var(--text-primary)', 
-              border: '1px solid var(--border-color)', 
-              cursor: 'pointer', 
-              boxShadow: 'var(--shadow-sm)',
-              zIndex: 10
-            }}
-            aria-label="Toggle Dark Mode"
-          >
-            {darkMode ? <Sun size={16} /> : <Moon size={16} />}
-          </button>
-          <button 
-            onClick={async () => {
-              try {
-                await signOut();
-                navigate('/login');
-              } catch (err) {
-                console.error('Logout failed:', err);
-              }
-            }}
-            style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', padding: '6px 14px', borderRadius: '100px', background: 'var(--error, #ef4444)', color: 'white', border: 'none', cursor: 'pointer', boxShadow: 'var(--shadow-sm)', fontWeight: 600, fontSize: '0.8rem' }}
-          >
-            <LogOut size={14} />
-            Logout
-          </button>
+        <div style={{ position: 'absolute', top: 0, right: 0, display: 'flex', gap: '8px', alignItems: 'center', zIndex: 50 }}>
+          <ProfileDropdown />
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
           <div style={{ background: 'var(--surface-color)', width: '48px', height: '48px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: 'var(--shadow-md)', overflow: 'hidden', border: '1px solid var(--border-color)' }}>
             <img 
-              src="/logo.png" 
+              src={darkMode ? "/logo_dark_mode.png" : "/logo.png"} 
               alt="BallotBuddy Logo" 
-              className="logo-light"
               style={{ width: '85%', height: '85%', objectFit: 'contain' }} 
-            />
-            <img 
-              src="/logo_dark_mode.png" 
-              alt="BallotBuddy Logo Dark" 
-              className="logo-dark"
-              style={{ width: '85%', height: '85%', objectFit: 'contain', display: 'none' }} 
             />
           </div>
           <h1 style={{ fontSize: '1.9rem', margin: 0, fontWeight: 800, color: 'var(--primary-blue-dark)', letterSpacing: '-0.5px', display: 'inline-block' }}>

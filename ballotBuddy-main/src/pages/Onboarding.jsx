@@ -2,12 +2,14 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Loader2, AlertCircle } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
 import { supabase } from '../lib/supabase';
 import './Login.css';
 
 const Onboarding = () => {
   const navigate = useNavigate();
   const { user, setProfile } = useAuth();
+  const { darkMode } = useTheme();
   
   const [username, setUsername] = useState('');
   const [phone, setPhone] = useState('');
@@ -36,7 +38,11 @@ const Onboarding = () => {
 
       const { error: upsertError } = await supabase
         .from('profiles')
-        .upsert(profileData, { onConflict: 'id' });
+        .update({
+          username: username.trim(),
+          phone: phone.trim() || null,
+        })
+        .eq('id', user.id);
 
       if (upsertError) throw upsertError;
 
@@ -57,7 +63,7 @@ const Onboarding = () => {
       <div className="auth-top-bar" style={{ padding: '12px 16px', justifyContent: 'center' }}>
         <div className="auth-logo" style={{ gap: '12px', display: 'flex', alignItems: 'center' }}>
           <div style={{ background: 'var(--surface-color)', width: '40px', height: '40px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: 'var(--shadow-md)', overflow: 'hidden', border: '1px solid var(--border-color)' }}>
-            <img src="/logo.png" alt="BallotBuddy Logo" className="logo-light" style={{ width: '85%', height: '85%', objectFit: 'contain' }} />
+            <img src={darkMode ? "/logo_dark_mode.png" : "/logo.png"} alt="BallotBuddy Logo" style={{ width: '85%', height: '85%', objectFit: 'contain' }} />
           </div>
           <span className="notranslate" style={{ fontSize: '1.5rem', margin: 0, fontWeight: 800, color: 'var(--primary-blue-dark)', letterSpacing: '-0.5px' }}>
             BallotBuddy

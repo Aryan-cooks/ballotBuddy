@@ -6,11 +6,14 @@ import ProgressBar from '../components/ProgressBar';
 import Button from '../components/Button';
 import { useProgress } from '../context/ProgressContext';
 import { useTheme } from '../context/ThemeContext';
+import { useAuth } from '../context/AuthContext';
+import { supabase } from '../lib/supabase';
 import MockSimulation from './MockSimulation';
 import './LearningModules.css';
 
 const LearningModules = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const { modules, updateModuleProgress, unlockModule, resetProgress } = useProgress();
   const { darkMode, toggleDarkMode } = useTheme();
 
@@ -28,9 +31,97 @@ const LearningModules = () => {
     return savedStep ? parseInt(savedStep) : 0;
   });
 
-  // Mini-game states for Module 3
-  const [agentVerified, setAgentVerified] = useState(false);
-  const [vvpatVerified, setVvpatVerified] = useState(false);
+  // Dynamic Simulation states
+  const [simStats, setSimStats] = useState({ total: 0, score: 0, correct: 0 });
+  const [agentScenario, setAgentScenario] = useState({ isIntact: true, isRevealed: false, userChoice: null });
+  const [vvpatScenario, setVvpatScenario] = useState({ evmCount: 0, vvpatCount: 0, isRevealed: false, userChoice: null });
+
+  // Load sim stats
+  useEffect(() => {
+    if (!user) return;
+    const fetchSimStats = async () => {
+      try {
+        const { data: profile } = await supabase.from('profiles').select('score').eq('id', user.id).single();
+        const { data: logs } = await supabase.from('simulation_logs').select('result').eq('user_id', user.id);
+        
+        if (profile || logs) {
+          const total = logs ? logs.length : 0;
+          const correct = logs ? logs.filter(l => l.result === 'correct').length : 0;
+          setSimStats({
+            total,
+            correct,
+            score: profile?.score || 0
+          });
+        }
+      } catch (err) {
+        console.error("Failed to load sim stats", err);
+      }
+    };
+    fetchSimStats();
+  }, [user]);
+
+  // Generate Agent Scenario
+  const generateAgentScenario = () => {
+    setAgentScenario({
+      isIntact: Math.random() < 0.8, // 80% chance intact
+      isRevealed: false,
+      userChoice: null
+    });
+  };
+
+  // Generate VVPAT Scenario
+  const generateVvpatScenario = () => {
+    const evm = Math.floor(Math.random() * (1000 - 300 + 1)) + 300;
+    const isMatch = Math.random() < 0.7; // 70% match
+    const diff = isMatch ? 0 : (Math.floor(Math.random() * 10) + 1) * (Math.random() > 0.5 ? 1 : -1);
+    setVvpatScenario({
+      evmCount: evm,
+      vvpatCount: evm + diff,
+      isRevealed: false,
+      userChoice: null
+    });
+  };
+
+  // Initialize scenarios on load
+  useEffect(() => {
+    generateAgentScenario();
+    generateVvpatScenario();
+  }, []);
+
+  const handleSimChoice = async (type, choice, isCorrect, details) => {
+    if (!user) return;
+    
+    const resultStr = isCorrect ? 'correct' : 'incorrect';
+    const scoreDiff = isCorrect ? 50 : -20;
+    const newScore = Math.max(0, simStats.score + scoreDiff);
+
+    // Update local state immediately for fast UI
+    setSimStats(prev => ({
+      total: prev.total + 1,
+      correct: prev.correct + (isCorrect ? 1 : 0),
+      score: newScore
+    }));
+
+    if (type === 'seal') {
+      setAgentScenario(prev => ({ ...prev, isRevealed: true, userChoice: choice }));
+    } else {
+      setVvpatScenario(prev => ({ ...prev, isRevealed: true, userChoice: choice }));
+    }
+
+    try {
+      // Log to DB
+      await supabase.from('simulation_logs').insert([{
+        user_id: user.id,
+        type,
+        result: resultStr,
+        details
+      }]);
+      // Update profile score
+      await supabase.from('profiles').update({ score: newScore }).eq('id', user.id);
+    } catch (err) {
+      console.error("Failed to save sim result", err);
+    }
+  };
 
   // Calculate overall progress based on individual module progress
   const overallProgress = Math.round(modules.reduce((acc, mod) => acc + mod.progress, 0) / modules.length);
@@ -440,57 +531,140 @@ const LearningModules = () => {
                 <div className="animate-slide-up">
                   <h3>3. Interactive Transparency</h3>
                   <p className="text-muted mt-2 mb-4" style={{ lineHeight: 1.6 }}>Experience the verification processes performed by counting agents.</p>
+
+                  {/* Progress Feedback */}
+                  <Card className="mb-4 bg-gray-light" style={{ border: 'none' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <div>
+                        <p className="text-xs text-muted mb-1">Your Score</p>
+                        <h3 style={{ margin: 0, color: 'var(--primary-blue)' }}>{simStats.score} pts</h3>
+                      </div>
+                      <div style={{ textAlign: 'right' }}>
+                        <p className="text-xs text-muted mb-1">Simulations</p>
+                        <h4 style={{ margin: 0 }}>{simStats.correct} / {simStats.total}</h4>
+                      </div>
+                    </div>
+                  </Card>
                   
                   {/* Mini-Game 1: Agent Simulator */}
-                  <Card className="mb-4" style={{ border: agentVerified ? '2px solid var(--success)' : '1px solid var(--border-color)' }}>
+                  <Card className="mb-4" style={{ border: agentScenario.isRevealed ? (agentScenario.userChoice === (agentScenario.isIntact ? 'intact' : 'tampered') ? '2px solid var(--success)' : '2px solid var(--error)') : '1px solid var(--border-color)' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
                       <h4 style={{ margin: 0, fontSize: '0.95rem' }}>Agent Simulator</h4>
-                      {agentVerified && <span className="badge" style={{ background: 'var(--success)', color: 'white' }}>VERIFIED</span>}
+                      {agentScenario.isRevealed && (
+                        <span className="badge" style={{ background: agentScenario.userChoice === (agentScenario.isIntact ? 'intact' : 'tampered') ? 'var(--success)' : 'var(--error)', color: 'white' }}>
+                          {agentScenario.userChoice === (agentScenario.isIntact ? 'intact' : 'tampered') ? '+50 PTS' : '-20 PTS'}
+                        </span>
+                      )}
                     </div>
-                    <p className="text-xs text-muted mb-4">You are a Counting Agent. Inspect the Control Unit seal before it is opened.</p>
+                    <p className="text-xs text-muted mb-4">You are a Counting Agent. Inspect the Control Unit seal.</p>
+                    
                     <div style={{ background: 'var(--bg-color)', padding: '16px', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px', border: '1px solid var(--border-color)', marginBottom: '12px' }}>
-                      <Lock size={32} color={agentVerified ? "var(--success)" : "var(--text-muted)"} />
-                      <p className="text-sm font-mono" style={{ background: 'var(--surface-color)', margin: 0, padding: '4px 8px', borderRadius: '4px', border: '1px solid var(--border-color)' }}>SEAL ID: IND-77X92</p>
+                      {agentScenario.isRevealed ? (
+                        <>
+                          {agentScenario.isIntact ? <Lock size={32} color="var(--success)" /> : <AlertTriangle size={32} color="var(--error)" />}
+                          <p className="text-sm font-mono" style={{ background: 'var(--surface-color)', margin: 0, padding: '4px 8px', borderRadius: '4px', border: '1px solid var(--border-color)', color: agentScenario.isIntact ? 'var(--success)' : 'var(--error)' }}>
+                            {agentScenario.isIntact ? 'SEAL INTACT' : 'SEAL TAMPERED'}
+                          </p>
+                        </>
+                      ) : (
+                        <>
+                          <Lock size={32} color="var(--text-muted)" />
+                          <p className="text-sm font-mono" style={{ background: 'var(--surface-color)', margin: 0, padding: '4px 8px', borderRadius: '4px', border: '1px solid var(--border-color)' }}>SEAL ID: IND-77X92</p>
+                        </>
+                      )}
                     </div>
-                    <Button 
-                      fullWidth 
-                      variant={agentVerified ? "outline" : "primary"}
-                      onClick={() => setAgentVerified(true)}
-                      disabled={agentVerified}
-                      icon={<ShieldCheck size={16} />}
-                    >
-                      {agentVerified ? "Seal Intact" : "Verify Seal is Intact"}
-                    </Button>
+
+                    {!agentScenario.isRevealed ? (
+                      <div style={{ display: 'flex', gap: '8px' }}>
+                        <Button 
+                          style={{ flex: 1 }} 
+                          variant="outline"
+                          onClick={() => {
+                            handleSimChoice('seal', 'intact', agentScenario.isIntact, { scenario: 'intact', choice: 'intact' });
+                          }}
+                        >
+                          Seal Intact
+                        </Button>
+                        <Button 
+                          style={{ flex: 1 }} 
+                          variant="outline"
+                          onClick={() => {
+                            handleSimChoice('seal', 'tampered', !agentScenario.isIntact, { scenario: 'intact', choice: 'tampered' });
+                          }}
+                        >
+                          Report Tampering
+                        </Button>
+                      </div>
+                    ) : (
+                      <div style={{ textAlign: 'center' }}>
+                        <p className="text-sm font-semibold mb-3" style={{ color: agentScenario.userChoice === (agentScenario.isIntact ? 'intact' : 'tampered') ? 'var(--success)' : 'var(--error)' }}>
+                          {agentScenario.userChoice === (agentScenario.isIntact ? 'intact' : 'tampered') 
+                            ? (agentScenario.isIntact ? 'Correct! The seal was fully intact.' : 'Good catch! The seal was compromised.') 
+                            : (agentScenario.isIntact ? 'Incorrect. The seal was actually intact.' : 'Missed it! The seal was tampered with.')}
+                        </p>
+                        <Button variant="outline" size="sm" onClick={generateAgentScenario} icon={<RotateCcw size={14} />}>
+                          Try Another Seal
+                        </Button>
+                      </div>
+                    )}
                   </Card>
 
                   {/* Mini-Game 2: VVPAT Match */}
-                  <Card style={{ border: vvpatVerified ? '2px solid var(--success)' : '1px solid var(--border-color)', opacity: agentVerified ? 1 : 0.5, pointerEvents: agentVerified ? 'auto' : 'none' }}>
+                  <Card style={{ border: vvpatScenario.isRevealed ? (vvpatScenario.userChoice === (vvpatScenario.evmCount === vvpatScenario.vvpatCount ? 'match' : 'mismatch') ? '2px solid var(--success)' : '2px solid var(--error)') : '1px solid var(--border-color)', opacity: agentScenario.isRevealed ? 1 : 0.5, pointerEvents: agentScenario.isRevealed ? 'auto' : 'none' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
                       <h4 style={{ margin: 0, fontSize: '0.95rem' }}>VVPAT Match Game</h4>
-                      {vvpatVerified && <span className="badge" style={{ background: 'var(--success)', color: 'white' }}>MATCHED</span>}
+                      {vvpatScenario.isRevealed && (
+                        <span className="badge" style={{ background: vvpatScenario.userChoice === (vvpatScenario.evmCount === vvpatScenario.vvpatCount ? 'match' : 'mismatch') ? 'var(--success)' : 'var(--error)', color: 'white' }}>
+                          {vvpatScenario.userChoice === (vvpatScenario.evmCount === vvpatScenario.vvpatCount ? 'match' : 'mismatch') ? '+50 PTS' : '-20 PTS'}
+                        </span>
+                      )}
                     </div>
                     <p className="text-xs text-muted mb-4">Compare the digital tally with the manual paper slip count.</p>
                     
                     <div style={{ display: 'flex', gap: '12px', marginBottom: '16px' }}>
                       <div style={{ flex: 1, background: 'var(--primary-blue-dark)', color: 'white', padding: '12px', borderRadius: '8px', textAlign: 'center' }}>
                         <p className="text-xs text-white-muted mb-1">EVM Digital Tally</p>
-                        <h3 style={{ margin: 0, color: '#38bdf8' }}>450</h3>
+                        <h3 style={{ margin: 0, color: '#38bdf8' }}>{vvpatScenario.evmCount}</h3>
                       </div>
-                      <div style={{ flex: 1, background: 'rgba(217, 119, 6, 0.15)', color: 'var(--warning)', padding: '12px', borderRadius: '8px', textAlign: 'center', border: '1px dashed var(--warning)' }}>
+                      <div style={{ flex: 1, background: vvpatScenario.isRevealed ? (vvpatScenario.evmCount === vvpatScenario.vvpatCount ? 'rgba(16, 185, 129, 0.15)' : 'rgba(239, 68, 68, 0.15)') : 'rgba(217, 119, 6, 0.15)', color: vvpatScenario.isRevealed ? (vvpatScenario.evmCount === vvpatScenario.vvpatCount ? 'var(--success)' : 'var(--error)') : 'var(--warning)', padding: '12px', borderRadius: '8px', textAlign: 'center', border: vvpatScenario.isRevealed ? 'none' : '1px dashed var(--warning)' }}>
                         <p className="text-xs mb-1">VVPAT Slips Counted</p>
-                        <h3 style={{ margin: 0 }}>{vvpatVerified ? '450' : '???'}</h3>
+                        <h3 style={{ margin: 0 }}>{vvpatScenario.isRevealed ? vvpatScenario.vvpatCount : '???'}</h3>
                       </div>
                     </div>
                     
-                    <Button 
-                      fullWidth 
-                      variant={vvpatVerified ? "outline" : "primary"}
-                      onClick={() => setVvpatVerified(true)}
-                      disabled={vvpatVerified}
-                      icon={<CheckCircle2 size={16} />}
-                    >
-                      {vvpatVerified ? "Match Confirmed!" : "Count Slips & Match"}
-                    </Button>
+                    {!vvpatScenario.isRevealed ? (
+                      <div style={{ display: 'flex', gap: '8px' }}>
+                        <Button 
+                          style={{ flex: 1 }} 
+                          variant="outline"
+                          onClick={() => {
+                            handleSimChoice('vvpat', 'match', vvpatScenario.evmCount === vvpatScenario.vvpatCount, { evm: vvpatScenario.evmCount, vvpat: vvpatScenario.vvpatCount });
+                          }}
+                        >
+                          Match
+                        </Button>
+                        <Button 
+                          style={{ flex: 1 }} 
+                          variant="outline"
+                          onClick={() => {
+                            handleSimChoice('vvpat', 'mismatch', vvpatScenario.evmCount !== vvpatScenario.vvpatCount, { evm: vvpatScenario.evmCount, vvpat: vvpatScenario.vvpatCount });
+                          }}
+                        >
+                          Mismatch
+                        </Button>
+                      </div>
+                    ) : (
+                      <div style={{ textAlign: 'center' }}>
+                        <p className="text-sm font-semibold mb-3" style={{ color: vvpatScenario.userChoice === (vvpatScenario.evmCount === vvpatScenario.vvpatCount ? 'match' : 'mismatch') ? 'var(--success)' : 'var(--error)' }}>
+                          {vvpatScenario.userChoice === (vvpatScenario.evmCount === vvpatScenario.vvpatCount ? 'match' : 'mismatch') 
+                            ? (vvpatScenario.evmCount === vvpatScenario.vvpatCount ? 'Correct! The counts match perfectly.' : 'Correct! You caught a mismatch.') 
+                            : (vvpatScenario.evmCount === vvpatScenario.vvpatCount ? 'Incorrect. The counts actually matched.' : 'Incorrect. There was a mismatch!')}
+                        </p>
+                        <Button variant="outline" size="sm" onClick={generateVvpatScenario} icon={<RotateCcw size={14} />}>
+                          Try Another Tally
+                        </Button>
+                      </div>
+                    )}
                   </Card>
                 </div>
               )}
@@ -541,7 +715,7 @@ const LearningModules = () => {
                 fullWidth 
                 icon={moduleThreeStep === 3 ? <CheckCircle2 size={18} /> : <ArrowRight size={18} />} 
                 onClick={advanceModuleThree}
-                disabled={moduleThreeStep === 2 && (!agentVerified || !vvpatVerified)}
+                disabled={moduleThreeStep === 2 && (!agentScenario.isRevealed || !vvpatScenario.isRevealed)}
               >
                 {moduleThreeStep === 3 ? 'Complete Journey' : 'Next Step'}
               </Button>
