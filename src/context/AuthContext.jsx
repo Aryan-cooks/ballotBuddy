@@ -1,19 +1,21 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 
+// ─── Friendly error messages ──────────────────────────────────────────────────
 const friendlyError = (msg) => {
   if (!msg) return 'Something went wrong. Please try again.';
   const m = msg.toLowerCase();
-  if (m.includes('password should contain')) return 'Password must include uppercase, lowercase, number, and special character.';
-  if (m.includes('invalid login credentials')) return 'Incorrect email or password.';
-  if (m.includes('user already registered')) return 'An account with this email already exists.';
-  if (m.includes('email not confirmed')) return 'Please confirm your email before logging in.';
-  if (m.includes('email rate limit')) return 'Too many attempts. Please wait a moment.';
-  if (m.includes('sms_provider_error') || m.includes('twilio')) return 'SMS service is currently unavailable. Please use email login or check your Supabase/Twilio settings.';
-  if (m.includes('invalid_otp')) return 'Invalid OTP. Please try again.';
+  if (m.includes('invalid login credentials'))   return 'Incorrect email or password. Please try again.';
+  if (m.includes('email not confirmed'))          return 'Please confirm your email before logging in.';
+  if (m.includes('user already registered'))      return 'An account with this email already exists.';
+  if (m.includes('password should contain'))      return 'Password must include uppercase, lowercase, number, and special character.';
+  if (m.includes('email rate limit'))             return 'Too many attempts. Please wait a moment.';
+  if (m.includes('sms') || m.includes('twilio')) return 'SMS service unavailable. Please use email login.';
+  if (m.includes('invalid_otp'))                  return 'Invalid OTP. Please try again.';
   return msg;
 };
 
+// ─── Context ──────────────────────────────────────────────────────────────────
 const AuthContext = createContext(null);
 
 export const useAuth = () => {
@@ -22,8 +24,9 @@ export const useAuth = () => {
   return ctx;
 };
 
+// ─── Provider ─────────────────────────────────────────────────────────────────
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
+  const [user,    setUser]    = useState(null);
   const [profile, setProfile] = useState(null);
   const [session, setSession] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -31,58 +34,70 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     let mounted = true;
 
+    // ── Safety net: if loading hasn't cleared in 4s, force it off ───────────
+    // Protects against the Supabase navigator-lock "lock stolen" crash that
+    // can prevent the normal setLoading(false) path from being reached.
+    const safetyTimer = setTimeout(() => {
+      if (mounted) setLoading(false);
+    }, 4000);
+
+    // ── Fetch profile row from Supabase ────────────────────────────────────
     const fetchProfile = async (userId) => {
       if (!userId) {
-        if (mounted) {
-          setProfile(null);
-          setLoading(false);
-        }
+        if (mounted) { setProfile(null); setLoading(false); }
+        clearTimeout(safetyTimer);
         return;
       }
-      
-      const { data } = await supabase.from('profiles').select('*').eq('id', userId).single();
-      if (mounted) {
-        setProfile(data || null); // null means no profile yet
+      try {
+        const { data } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', userId)
+          .single();
+        if (mounted) setProfile(data ?? null);
+      } catch (_) {
+        if (mounted) setProfile(null);
+      } finally {
+        clearTimeout(safetyTimer);
+        if (mounted) setLoading(false);
+      }
+    };
+
+    // ── Apply session to state ─────────────────────────────────────────────
+    const applySession = (newSession) => {
+      if (!mounted) return;
+      setSession(newSession);
+      setUser(newSession?.user ?? null);
+      if (newSession?.user) {
+        fetchProfile(newSession.user.id);
+      } else {
+        setProfile(null);
+        clearTimeout(safetyTimer);
         setLoading(false);
       }
     };
 
-    const handleSession = (session) => {
-      if (mounted) {
-        setSession(session);
-        setUser(session?.user ?? null);
-        if (session?.user) {
-          fetchProfile(session.user.id);
-        } else {
-          setProfile(null);
-          setLoading(false);
-        }
-      }
-    };
+    // ── Get the current session once on mount ──────────────────────────────
+    supabase.auth.getSession()
+      .then(({ data: { session } }) => applySession(session))
+      .catch(() => { if (mounted) setLoading(false); clearTimeout(safetyTimer); });
 
-    setLoading(true);
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      handleSession(session);
+    // ── Listen for auth state changes (sign in, sign out, token refresh) ───
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, newSession) => {
+      applySession(newSession);
     });
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
-        setLoading(true);
-        handleSession(session);
-      }
-    );
 
     return () => {
       mounted = false;
+      clearTimeout(safetyTimer);
       subscription.unsubscribe();
     };
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── Auth actions ─────────────────────────────────────────────────────────
 
   const signInWithEmail = async (email, password) => {
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) throw new Error(friendlyError(error.message));
     return data;
   };
@@ -97,44 +112,24 @@ export const AuthProvider = ({ children }) => {
       },
     });
     if (error) throw new Error(friendlyError(error.message));
-    
-    // Ensure profile exists (handling case if DB trigger is absent)
-    if (data.user) {
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .upsert({
-          id: data.user.id,
-          email: email,
-          username: username,
-        }, { onConflict: 'id' });
-        
-      if (profileError) {
-        console.error('Error creating profile:', profileError);
-      }
+
+    // session null → email confirmation required
+    if (data.user && !data.session) {
+      // Try auto-login (works when email confirmation is disabled in Supabase)
+      try {
+        const { data: loginData, error: loginError } = await supabase.auth.signInWithPassword({ email, password });
+        if (!loginError && loginData.session) return { ...loginData, requiresConfirmation: false };
+      } catch (_) { /* fall through */ }
+      return { ...data, requiresConfirmation: true };
     }
 
-    // If no session returned (email confirmation required), try to sign in directly
-    if (data.user && !data.session) {
-      // Attempt auto-login — will work if email confirmation is disabled
-      try {
-        const loginResult = await supabase.auth.signInWithPassword({ email, password });
-        if (!loginResult.error) {
-          return loginResult.data;
-        }
-      } catch (_) {
-        // If auto-login fails, fall through to return signup data
-      }
-    }
-    
-    return data;
+    return { ...data, requiresConfirmation: false };
   };
 
   const signInWithGoogle = async () => {
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
-      options: {
-        redirectTo: window.location.origin,
-      },
+      options: { redirectTo: window.location.origin },
     });
     if (error) throw new Error(friendlyError(error.message));
     return data;
@@ -143,81 +138,55 @@ export const AuthProvider = ({ children }) => {
   const signOut = async () => {
     const { error } = await supabase.auth.signOut();
     if (error) throw error;
+    setUser(null);
+    setProfile(null);
+    setSession(null);
   };
 
+  // ── Simulated Phone OTP (no Twilio configured) ───────────────────────────
   const signInWithPhone = async (phone) => {
-    // Generate a 6-digit OTP
-    const otp = Math.floor(100000 + Math.random() * 900000).toString();
-    const expiry = Date.now() + 30 * 1000; // 30 seconds
-
+    const otp    = Math.floor(100000 + Math.random() * 900000).toString();
+    const expiry = Date.now() + 30_000;
     localStorage.setItem('simulated_otp', JSON.stringify({ phone, otp, expiry }));
-    
-    console.log(`%c[SIMULATED SMS]`, 'color: #10b981; font-weight: bold; font-size: 14px;');
-    console.log(`OTP sent to ${phone}: %c${otp}`, 'font-size: 16px; font-weight: bold; color: #3b82f6;');
-    console.log(`This OTP will expire in 30 seconds.`);
-    
-    // Simulate network delay
-    await new Promise(resolve => setTimeout(resolve, 800));
+    console.log(`%c[SIMULATED OTP] ${otp}  (expires in 30s)`, 'color:#10b981;font-weight:bold;font-size:14px;');
+    await new Promise(r => setTimeout(r, 800));
     return { simulated: true };
   };
 
   const verifyPhoneOtp = async (phone, token) => {
-    // Simulate network delay
-    await new Promise(resolve => setTimeout(resolve, 800));
+    await new Promise(r => setTimeout(r, 800));
+    const stored = localStorage.getItem('simulated_otp');
+    if (!stored) throw new Error('No OTP request found. Please request a new OTP.');
 
-    const storedData = localStorage.getItem('simulated_otp');
-    if (!storedData) throw new Error('No OTP request found. Please request a new OTP.');
-
-    const { phone: storedPhone, otp, expiry } = JSON.parse(storedData);
-
+    const { phone: storedPhone, otp, expiry } = JSON.parse(stored);
     if (phone !== storedPhone) throw new Error('Phone number mismatch. Please try again.');
-    if (Date.now() > expiry) {
-      localStorage.removeItem('simulated_otp');
-      throw new Error('OTP has expired. Please request a new one.');
-    }
-    if (token !== otp) throw new Error('Invalid OTP. Please try again.');
+    if (Date.now() > expiry)   { localStorage.removeItem('simulated_otp'); throw new Error('OTP expired. Please request a new one.'); }
+    if (token !== otp)         throw new Error('Invalid OTP. Please try again.');
 
-    // OTP is valid
     localStorage.removeItem('simulated_otp');
 
-    // Attempt login/signup via email/password behind the scenes
-    const email = `${phone.replace(/\D/g, '')}@phone.user`;
-    const password = '12345678';
+    const syntheticEmail    = `${phone.replace(/\D/g, '')}@phone.ballotbuddy.local`;
+    const syntheticPassword = 'Ballot@Phone#2024!';
 
-    try {
-      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-      if (error) {
-        if (error.message.toLowerCase().includes('invalid login credentials')) {
-          // User doesn't exist, sign them up
-          const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
-            email,
-            password,
-            options: {
-              data: { phone }
-            }
-          });
-          
-          if (signUpError) throw signUpError;
-          
-          // Upsert profile
-          if (signUpData.user) {
-            await supabase.from('profiles').upsert({
-              id: signUpData.user.id,
-              phone: phone,
-              username: `User_${phone.slice(-4)}`
-            }, { onConflict: 'id' });
-          }
-          
-          return signUpData;
-        }
-        throw error;
-      }
-      return data;
-    } catch (err) {
-      throw new Error(friendlyError(err.message));
+    const { data: loginData, error: loginError } = await supabase.auth.signInWithPassword({
+      email: syntheticEmail, password: syntheticPassword,
+    });
+    if (!loginError) return loginData;
+
+    if (loginError.message.toLowerCase().includes('invalid login credentials')) {
+      const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+        email: syntheticEmail,
+        password: syntheticPassword,
+        options: { data: { phone, username: `User_${phone.slice(-4)}` } },
+      });
+      if (signUpError) throw new Error(friendlyError(signUpError.message));
+      return signUpData;
     }
+
+    throw new Error(friendlyError(loginError.message));
   };
 
+  // ─────────────────────────────────────────────────────────────────────────
   const value = {
     user,
     profile,
