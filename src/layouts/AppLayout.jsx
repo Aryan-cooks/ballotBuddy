@@ -1,73 +1,39 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Outlet, NavLink, useNavigate } from 'react-router-dom';
-import { Home, BookOpen, Newspaper, ShieldAlert, UserPlus, Globe, Moon, Sun, ChevronDown } from 'lucide-react';
-import { useTranslation } from '../context/TranslationContext';
+import React from 'react';
+import { Outlet, NavLink, useLocation } from 'react-router-dom';
+import { Home, BookOpen, UserPlus, Newspaper, ShieldCheck } from 'lucide-react';
 import './AppLayout.css';
 
-const LANGUAGES = [
-  { code: 'en', label: 'English', short: 'EN' },
-  { code: 'hi', label: 'हिन्दी', short: 'HI' },
-];
-
 const AppLayout = () => {
-  const [darkMode, setDarkMode] = useState(() => localStorage.getItem('darkMode') === 'true');
-  const navigate = useNavigate();
-
-  useEffect(() => {
-    // Clear Google Translate cookies to ensure it doesn't auto-translate
-    const clearCookie = (name) => {
-      document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
-      document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=${window.location.hostname}`;
-      document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=.${window.location.hostname}`;
-    };
-    clearCookie('googtrans');
-    
-    if (darkMode) {
-      document.body.classList.add('dark-mode');
-      localStorage.setItem('darkMode', 'true');
-    } else {
-      document.body.classList.remove('dark-mode');
-      localStorage.setItem('darkMode', 'false');
-    }
-  }, [darkMode]);
-
-  const toggleDarkMode = () => setDarkMode(!darkMode);
+  const location = useLocation();
+  
+  const navItems = [
+    { path: '/', icon: <Home size={24} />, label: 'Home' },
+    { path: '/modules', icon: <BookOpen size={24} />, label: 'Learn' },
+    { path: '/register', icon: <UserPlus size={24} />, label: 'Register' },
+    { path: '/news', icon: <Newspaper size={24} />, label: 'News' },
+    { path: '/verify', icon: <ShieldCheck size={24} />, label: 'Verify' },
+  ];
 
   return (
     <div className="app-container">
       <main className="main-content">
         <Outlet />
       </main>
-
+      
       <nav className="bottom-nav glass-panel">
-        <NavLink to="/" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`} end>
-          <Home size={24} />
-          <span>Home</span>
-        </NavLink>
-        
-        <NavLink to="/modules" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
-          <BookOpen size={22} />
-          <span>Learn</span>
-        </NavLink>
-
-        <NavLink to="/register" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
-          <UserPlus size={22} />
-          <span>Register</span>
-        </NavLink>
-
-        <NavLink to="/news" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
-          <Newspaper size={22} />
-          <span>News</span>
-        </NavLink>
-
-        <NavLink to="/verify" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
-          <ShieldAlert size={22} />
-          <span>Verify</span>
-        </NavLink>
+        {navItems.map((item) => (
+          <NavLink 
+            key={item.path} 
+            to={item.path} 
+            className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
+          >
+            {item.icon}
+            <span>{item.label}</span>
+          </NavLink>
+        ))}
       </nav>
     </div>
   );
 };
 
 export default AppLayout;
-

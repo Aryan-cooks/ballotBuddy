@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { ProgressProvider } from './context/ProgressContext';
 import { TranslationProvider } from './context/TranslationContext';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { ThemeProvider } from './context/ThemeContext';
 import AppLayout from './layouts/AppLayout';
 import HomeDashboard from './pages/HomeDashboard';
 import LearningModules from './pages/LearningModules';
@@ -34,28 +35,28 @@ const ProtectedRoute = ({ children }) => {
 
 function App() {
   return (
-    <AuthProvider>
-      <TranslationProvider>
-        <ProgressProvider>
-          <Router>
-            <Routes>
-              <Route path="/login" element={<Login />} />
-              <Route path="/signup" element={<Register />} />
-              <Route path="/" element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
-                <Route index element={<HomeDashboard />} />
-                <Route path="modules" element={<LearningModules />} />
-                <Route path="news" element={<NewsFeed />} />
-                <Route path="verify" element={<VerifyNews />} />
-                <Route path="register" element={<RegistrationGuide />} />
-              </Route>
-            </Routes>
-          </Router>
-        </ProgressProvider>
-      </TranslationProvider>
-    </AuthProvider>
+    <ThemeProvider>
+      <AuthProvider>
+        <TranslationProvider>
+          <ProgressProvider>
+            <Router>
+              <Routes>
+                <Route path="/login" element={<Login />} />
+                <Route path="/signup" element={<Register />} />
+                <Route path="/" element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
+                  <Route index element={<HomeDashboard />} />
+                  <Route path="modules" element={<LearningModules />} />
+                  <Route path="news" element={<NewsFeed />} />
+                  <Route path="verify" element={<VerifyNews />} />
+                  <Route path="register" element={<RegistrationGuide />} />
+                </Route>
+              </Routes>
+            </Router>
+          </ProgressProvider>
+        </TranslationProvider>
+      </AuthProvider>
+    </ThemeProvider>
   );
 }
 
 export default App;
-
-

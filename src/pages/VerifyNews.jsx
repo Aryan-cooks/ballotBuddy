@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { ShieldAlert, ShieldCheck, AlertTriangle, Search, CheckCircle, XCircle, BrainCircuit, UploadCloud, FileText, History, Info, ExternalLink, RefreshCw } from 'lucide-react';
+import { ShieldAlert, ShieldCheck, AlertTriangle, Search, CheckCircle, XCircle, BrainCircuit, UploadCloud, FileText, History, Info, ExternalLink, RefreshCw, Moon, Sun } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
 import Card from '../components/Card';
 import Button from '../components/Button';
 import Tesseract from 'tesseract.js';
@@ -9,6 +10,7 @@ import './VerifyNews.css';
 
 const VerifyNews = () => {
   const { user } = useAuth();
+  const { darkMode, toggleDarkMode } = useTheme();
   const [inputValue, setInputValue] = useState('');
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [isExtractingText, setIsExtractingText] = useState(false);
@@ -143,7 +145,30 @@ const VerifyNews = () => {
   };
 
   return (
-    <div className="container mt-4 mb-20 animate-fade-in">
+    <div className="container mt-4 mb-20 animate-fade-in" style={{ position: 'relative' }}>
+      <button 
+        onClick={toggleDarkMode}
+        style={{ 
+          position: 'absolute', 
+          top: '10px', 
+          right: '20px', 
+          display: 'flex', 
+          alignItems: 'center', 
+          justifyContent: 'center', 
+          width: '36px', 
+          height: '36px', 
+          borderRadius: '50%', 
+          background: darkMode ? 'var(--primary-blue)' : 'var(--surface-color)', 
+          color: darkMode ? 'white' : 'var(--text-primary)', 
+          border: '1px solid var(--border-color)', 
+          cursor: 'pointer', 
+          boxShadow: 'var(--shadow-sm)',
+          zIndex: 10
+        }}
+        aria-label="Toggle Dark Mode"
+      >
+        {darkMode ? <Sun size={18} /> : <Moon size={18} />}
+      </button>
       <header className="mb-6">
         <div className="flex-start gap-3 mb-2">
           <div className="icon-badge bg-primary-light">
@@ -322,7 +347,5 @@ const VerifyNews = () => {
     </div>
   );
 };
-
-export default VerifyNews;
 
 export default VerifyNews;
