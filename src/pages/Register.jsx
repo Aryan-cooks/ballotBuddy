@@ -94,7 +94,7 @@ const Register = () => {
         const result = await signUpWithEmail(identifier, password, username);
         if (result.requiresConfirmation) {
           // Email confirmation is enabled in Supabase — user must verify first
-          setSuccess('Account created! Please check your email to confirm, then log in.');
+          setSuccess('Account created! ✅ A confirmation link has been sent to your email. Please confirm it, then come back to log in.');
         } else {
           // Email confirmation is disabled — user is logged in immediately
           navigate('/');

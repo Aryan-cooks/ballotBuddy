@@ -113,16 +113,12 @@ export const AuthProvider = ({ children }) => {
     });
     if (error) throw new Error(friendlyError(error.message));
 
-    // session null → email confirmation required
+    // session null → email confirmation is enabled in Supabase; user must verify first
     if (data.user && !data.session) {
-      // Try auto-login (works when email confirmation is disabled in Supabase)
-      try {
-        const { data: loginData, error: loginError } = await supabase.auth.signInWithPassword({ email, password });
-        if (!loginError && loginData.session) return { ...loginData, requiresConfirmation: false };
-      } catch (_) { /* fall through */ }
       return { ...data, requiresConfirmation: true };
     }
 
+    // session present → email confirmation is disabled; user is logged in immediately
     return { ...data, requiresConfirmation: false };
   };
 
